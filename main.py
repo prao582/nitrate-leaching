@@ -96,6 +96,32 @@ def improved_euler_concentration(f, t0, t1, dt, x0, pars):
 
     return x
 
+def plot_given_data():
+    year_stock = np.genfromtxt("nl_cows.txt", delimiter = ',', skip_header = 1, usecols = 0)
+    stock = np.genfromtxt('nl_cows.txt', delimiter = ',', skip_header = 1, usecols = 1)
+
+    year_conc = np.genfromtxt("nl_n.csv", delimiter = ',', skip_header = 1, usecols = 0)
+    concentration = np.genfromtxt('nl_n.csv', delimiter = ',', skip_header = 1, usecols = 1)
+
+    fig, ax1 = plt.subplots()
+    plt.title("Stock numbers and concentration against time")
+    ax1.set_xlabel("time [years]")
+    ax1.set_ylabel("Concentration [mg/L]")
+    conc = ax1.plot(year_conc, concentration, label = "Concentration", color = 'red')
+
+    ax2 = ax1.twinx()
+    ax2.set_xlabel("time, [years]")
+    ax2.set_ylabel("Stock numbers")
+    stck = ax2.plot(year_stock, stock, label = "Stock numbers", color = 'green')
+    lns = conc+stck
+    labs = [l.get_label() for l in lns]
+    ax1.legend(lns, labs, loc=0)
+    fig.tight_layout()
+
+    plt.annotate(xy=[2010,250000], s='  MAR introduced')
+    plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
+
+    plt.show() 
 
 #####################################################################################################
 #-functions for odes (pressure and concentration)
@@ -108,13 +134,9 @@ def improved_euler_concentration(f, t0, t1, dt, x0, pars):
 #-compare analytical and numerical plots with a benchmarking function
 #-forecast
 #########################################################################################################
-<<<<<<< HEAD
 #testing git 
-gegbebge
-=======
 #testing
 #trent was here
->>>>>>> 3f79c2450d0654ae8475af01ec265f3b1921d4ff
 
 
 if __name__ == "__main__":
