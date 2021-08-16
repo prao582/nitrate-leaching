@@ -108,8 +108,13 @@ def improved_euler_concentration(f, t0, t1, dt, x0, pars):
 #-compare analytical and numerical plots with a benchmarking function
 #-forecast
 #########################################################################################################
+<<<<<<< HEAD
 #testing git 
 gegbebge
+=======
+#testing
+#trent was here
+>>>>>>> 3f79c2450d0654ae8475af01ec265f3b1921d4ff
 
 
 if __name__ == "__main__":
