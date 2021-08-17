@@ -190,21 +190,18 @@ def plot_given_data():
     plt.title("Stock numbers and concentration against time")
     ax1.set_xlabel("time [years]")
     ax1.set_ylabel("Concentration [mg/L]")
-    conc = ax1.plot(year_conc, concentration, label = "Concentration", color = 'red')
+    conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
 
     ax2 = ax1.twinx()
     ax2.set_xlabel("time, [years]")
     ax2.set_ylabel("Stock numbers")
-    stck = ax2.plot(year_stock, stock, label = "Stock numbers", color = 'green')
-    lns = conc+stck
-    labs = [l.get_label() for l in lns]
-    ax1.legend(lns, labs, loc=0)
+    stck = ax2.scatter(year_stock, stock, label = "Stock numbers", color = 'green')
     fig.tight_layout()
 
     plt.annotate(xy=[2010,250000], s='  MAR introduced')
     plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
-
-    plt.show() 
+    plt.legend([conc, stck], ["Concentration", "Stock numbers"])
+    plt.show()
 
 def plot_benchmark():
     ''' Compare analytical and numerical solutions.
@@ -263,5 +260,3 @@ if __name__ == "__main__":
     #ode_model_pressure()
     #ode_model_concentration()
     stock_population()
-
-
