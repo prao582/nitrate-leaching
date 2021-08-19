@@ -203,40 +203,48 @@ def plot_given_data():
     plt.legend([conc, stck], ["Concentration", "Stock numbers"])
     plt.show()
 
-def plot_benchmark():
-    ''' Compare analytical and numerical solutions.
+def plot_concentration_model():
+    ''' Plot the concentration LPM over top of the data. '''
 
-        Parameters:
-        -----------
-        none
-
-        Returns:
-        --------
-        none
-
-        Notes:
-        ------
-        This function called within if __name__ == "__main__":
-
-        It should contain commands to obtain analytical and numerical solutions,
-        plot these, and either display the plot to the screen or save it to the disk.
-    '''
-    # Numerical solution
-    t, x = solve_ode_concentration(ode_model_concentration, t0 = ?, t1 = ?, dt = ?, x0 =?, pars = [?])
-
-    # Analytical solution
-    def y_an(x):
-        return (-1+1/(math.exp(x)))
-
-    # set up numerical vectors for independent and dependent 
-    y_an_2 = np.vectorize(y_an)
-    t_an = np.arange(0, 10, 0.1)
-
-    # plot both graphs on the same axis
-    f1, ax = plt.subplots(1,1)
-    ax.plot(t, x, 'r', marker = 'x', label = 'Numerical Solution')
-    ax.plot(t_an, y_an_2(t_an), 'b:', label = 'Analytical Solution')
+    plot_given_data()
+    t, C = improved_euler_concentration()
+    plt.plot(t, C)
     plt.show()
+
+# def plot_benchmark():
+#     ''' Compare analytical and numerical solutions.
+
+#         Parameters:
+#         -----------
+#         none
+
+#         Returns:
+#         --------
+#         none
+
+#         Notes:
+#         ------
+#         This function called within if __name__ == "__main__":
+
+#         It should contain commands to obtain analytical and numerical solutions,
+#         plot these, and either display the plot to the screen or save it to the disk.
+#     '''
+#     # Numerical solution
+#     t, x = improved_euler_concentration(ode_model_concentration, t0 = ?, t1 = ?, dt = ?, x0 =?, pars = [?])
+
+#     # Analytical solution
+#     def y_an(x):
+#         return (-1+1/(math.exp(x)))
+
+#     # set up numerical vectors for independent and dependent 
+#     y_an_2 = np.vectorize(y_an)
+#     t_an = np.arange(0, 10, 0.1)
+
+#     # plot both graphs on the same axis
+#     f1, ax = plt.subplots(1,1)
+#     ax.plot(t, x, 'r', marker = 'x', label = 'Numerical Solution')
+#     ax.plot(t_an, y_an_2(t_an), 'b:', label = 'Analytical Solution')
+#     plt.show()
 
 
 
@@ -259,4 +267,5 @@ def plot_benchmark():
 if __name__ == "__main__":
     #ode_model_pressure()
     #ode_model_concentration()
-    stock_population()
+    #stock_population()
+    plot_given_data()
