@@ -218,40 +218,90 @@ def plot_concentration_model():
     plt.plot(t, C)
     plt.show()
 
-# def plot_benchmark():
-#     ''' Compare analytical and numerical solutions.
+def plot_benchmark():
+    ''' Compare analytical and numerical solutions.
 
-#         Parameters:
-#         -----------
-#         none
+        Parameters:
+        -----------
+        none
 
-#         Returns:
-#         --------
-#         none
+        Returns:
+        --------
+        none
 
-#         Notes:
-#         ------
-#         This function called within if __name__ == "__main__":
+        Notes:
+        ------
+        This function called within if __name__ == "__main__":
 
-#         It should contain commands to obtain analytical and numerical solutions,
-#         plot these, and either display the plot to the screen or save it to the disk.
-#     '''
-#     # Numerical solution
-#     t, x = improved_euler_concentration(ode_model_concentration, t0 = ?, t1 = ?, dt = ?, x0 =?, pars = [?])
+        It should contain commands to obtain analytical and numerical solutions,
+        plot these, and either display the plot to the screen or save it to the disk.
+    '''
+    M = 
+    t = 
+    tdelay = 
+    P = 
+    P0 = 
+    a = 
+    b1 = 
+    bc = 
+    C = 
+    Pa = 
+    Pmar = 
+    b = 
 
-#     # Analytical solution
-#     def y_an(x):
-#         return (-1+1/(math.exp(x)))
 
-#     # set up numerical vectors for independent and dependent 
-#     y_an_2 = np.vectorize(y_an)
-#     t_an = np.arange(0, 10, 0.1)
+    # Numerical solution
+    t, C_Numerical = euler_solve_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, dt = 0.1, C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
 
-#     # plot both graphs on the same axis
-#     f1, ax = plt.subplots(1,1)
-#     ax.plot(t, x, 'r', marker = 'x', label = 'Numerical Solution')
-#     ax.plot(t_an, y_an_2(t_an), 'b:', label = 'Analytical Solution')
-#     plt.show()
+    # Analytical solution
+    #def y_an(x):
+    #    return (-1+1/(math.exp(x)))
+    C_Analytical = np.zeros(len(C_Numerical))
+    C_Error = np.zeros(len(C_Numerical))
+    inverse_stepsize = np.linspace(1, 3, 21)
+    C_Convergence = np.zeros(len(inverse_stepsize))
+
+    for i in range (len(C_Numerical)):
+        tmar = 2010
+        if t[i] < tmar:
+            Pa1 = Pa
+        else:
+            Pa1 = Pa + Pmar
+        tc = 2010
+        if t-tdelay < tc:
+            b = b1
+        else:
+            b = a*b1
+
+        C_Analytical[i] = 
+        C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
+
+    for i in range (len(inverse_stepsize)):
+        tA, CA = euler_solve_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, inverse_stepsize[i]**(-1), C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+        C_Convergence[i] = CA[-1]
+
+    plt.subplot(1,3,1)
+    plt.plot(t,C_Numerical,'b--',label = 'Numerical')
+    plt.plot(t,C_Analytical,'rx',label = 'Analytical')
+    plt.legend()
+    plt.title('Benchmark')
+    plt.xlabel('t')
+    plt.ylabel('C')
+
+    plt.subplot(1,3,2)
+    plt.plot(t,C_Error,'k-')
+    plt.title('Error Analysis')
+    plt.xlabel('t')
+    plt.ylabel('Relative Error Against Benchmark')
+
+    plt.subplot(1,3,3)
+    plt.plot(inverse_stepsize,C_Convergence,'bx')
+    plt.title('Timestep Convergence')
+    plt.xlabel('1/delta t')
+    plt.ylabel('X(t=10)')
+
+    plt.tight_layout()
+    plt.show()
 
 
 
