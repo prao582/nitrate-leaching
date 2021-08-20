@@ -15,8 +15,22 @@ def ode_model_pressure(t, P, b, Pa, Pmar):
     dPdt = -b * (P + (Pa/2)) - (b * (P - (Pa1/2)))
     return dPdt
 
-def ode_model_concentration(t, M, P, tdelay, a, P0, C, bc, Pa, Pmar, b):
+def ode_model_concentration(M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b):
+    #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
+    #inputs: C, t
+    #called inputs: n, P
 
+    n = stock_interpolation(t-tdelay)
+    P = ode_model_pressure(t, P, b, Pa, Pmar)
+
+
+
+    #change infiltration depending on time that active carbon introduced
+    tc = 2010
+    if t-tdelay < tc:
+        b = b1
+    else:
+        b = a*b1
     #change pressure parameter depending on time that MAR is introduced
     tmar = 2010
     if t < tmar:
@@ -24,16 +38,9 @@ def ode_model_concentration(t, M, P, tdelay, a, P0, C, bc, Pa, Pmar, b):
     else:
         Pa1 = Pa + Pmar
 
-    #change infiltration depending on time that active carbon introduced
-    tc = 2010
-    if t < tc:
-        b = ode_model_pressure(t-tdelay, P, b, Pa, Pmar)
-    else:
-        b = a * ode_model_pressure(t-tdelay, P, b, Pa, Pmar)
 
-    n = stock_interpolation(t-tdelay)
+    dCdt = (-n * b * (P-P0)) + (bc * (P - 0.5*Pa1) * C)
     
-    dCdt = (((-n) * b * (P-P0))/M) + ((bc * (P - (Pa1/2)) * C)/M)
     return dCdt
 
 
