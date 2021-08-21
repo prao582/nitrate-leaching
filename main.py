@@ -15,7 +15,7 @@ def ode_model_pressure(t, P, b, Pa, Pmar):
     dPdt = -b * (P + (Pa/2)) - (b * (P - (Pa1/2)))
     return dPdt
 
-def ode_model_concentration(M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b):
+def ode_model_concentration(t, C, n, M, tdelay, P, P0, a, b1, bc, Pa, Pmar, b):
     #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
     #inputs: C, t
     #called inputs: n, P
@@ -103,7 +103,25 @@ def stock_interpolation(t):
     return n
 
 
-def improved_euler_concentration(f, t0, t1, dt, C0, pars):
+#def euler_solve_concentration(f, t0, t1, dt, C0, pars):
+    
+    # Allocate return arrays
+    #t = np.arange(t0, t1+dt, dt)
+    #params_unknown, params_known = pars
+    #C = np.zeros(len(t))
+    #C[0] = C0
+
+    #for i in range(0, (len(t) - 1)):
+        
+        # Compute normal euler step
+        #C1 = C[i] + dt*f(t[i], C[i], params_unknown, params_known,i)
+        
+        # Corrector step
+        #C[i+1] = C[i] + (dt/2)*(f(t[i], C[i], params_unknown, params_known,i) + f(t[i+1], C1, params_unknown, params_known,i))
+
+    #return t, C
+
+def improved_euler_concentration_benchmark(f, t0, t1, dt, C0, pars):
     ''' Solve an ODE numerically.
 
         Parameters:
@@ -145,7 +163,7 @@ def improved_euler_concentration(f, t0, t1, dt, C0, pars):
     return t, c
 
 
-def improved_euler_pressure(f, t0, t1, dt, p0, pars):
+def improved_euler_concentration(f, t0, t1, dt, C0, pars):
     ''' Solve an ODE numerically.
 
         Parameters:
@@ -153,38 +171,38 @@ def improved_euler_pressure(f, t0, t1, dt, p0, pars):
         f : callable
             Function that returns dxdt given variable and parameter inputs.
         t0 : float
-            Initial time of pressure.
+            Initial time of concentration.
         t1 : float
-            Final time of pressure.
+            Final time of concentration.
         dt : float
             Time step length.
-        P0 : float
-            Initial value of pressure.
+        C0 : float
+            Initial value of concentration.
         pars : array-like
             List of parameters passed to ODE function f.
 
         Returns:
         --------
         t : array-like
-            Independent variable time vector.
-        p : array-like
-            Dependent variable pressure vector.
+            Independent variable concentration vector.
+        c : array-like
+            Dependent variable concentration vector.
     '''
 
 	# initialise
     steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
     t = t0 + np.arange(steps+1) * dt			# t array
-    p = 0. * t						        	# p array to store concentration
-    p[0] = p0							        # Set initial value
+    c = 0. * t						        	# c array to store concentration
+    c[0] = C0							        # Set initial value
 	
 	# Iterate over all values of t
     for i in range (steps):    
-        f0 = f(t[i], p[i], *pars)
-        f1 = f(t[i] + dt, p[i] + dt * f0, *pars)
+        f0 = f(t[i], c[i], *pars)
+        f1 = f(t[i] + dt, c[i] + dt * f0, *pars)
 	    # Increment solution by step size x half of each derivative
-        p[i+1] = p[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
+        c[i+1] = c[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
 
-    return t, p
+    return t, c
 
 
 def plot_given_data():
@@ -234,20 +252,7 @@ def plot_benchmark():
         It should contain commands to obtain analytical and numerical solutions,
         plot these, and either display the plot to the screen or save it to the disk.
     '''
-
-    M = 3500 #mass parameter
-    t = #time input
-    tdelay = 5 #time delay parameter
-    P = #initial pressure in first ode
-    P0 = #
-    a = 
-    b1 = 
-    bc = 
-    C = 
-    Pa = 
-    Pmar = 
-    b = 
-
+    n = 100
     M = 1
     tdelay = 0
     P = 1
@@ -261,12 +266,17 @@ def plot_benchmark():
 
 
     # Numerical solution
-    t, C_Numerical = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, dt = 0.1, C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+    t, C_Numerical = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 1, pars = [n, M, tdelay, P, P0, a, b1, bc, Pa, Pmar, b])
 
     # Analytical solution
-    #def y_an(x):
-    #    return (-1+1/(math.exp(x)))
-    C_Analytical = np.zeros(len(C_Numerical))
+    def cu_an(x):
+        return (math.exp(-x))
+
+    cu_vector = np.vectorize(cu_an)
+    C_Analytical = cu_vector(t)
+
+    '''
+
     C_Error = np.zeros(len(C_Numerical))
     inverse_stepsize = np.linspace(1, 3, 21)
     C_Convergence = np.zeros(len(inverse_stepsize))
@@ -290,6 +300,8 @@ def plot_benchmark():
         tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, inverse_stepsize[i]**(-1), C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
         C_Convergence[i] = CA[-1]
 
+    '''
+
     plt.subplot(1,3,1)
     plt.plot(t,C_Numerical,'b--',label = 'Numerical')
     plt.plot(t,C_Analytical,'rx',label = 'Analytical')
@@ -297,6 +309,9 @@ def plot_benchmark():
     plt.title('Benchmark')
     plt.xlabel('t')
     plt.ylabel('C')
+    plt.show()
+
+    '''
 
     plt.subplot(1,3,2)
     plt.plot(t,C_Error,'k-')
@@ -312,6 +327,8 @@ def plot_benchmark():
 
     plt.tight_layout()
     plt.show()
+
+    '''
 
 
 
@@ -404,40 +421,3 @@ if __name__ == "__main__":
 #             x[i+1] = x[i] + (dt/2)*(f(t[i], x[i], params_unknown, params_known, i=i) + f(t[i+1], x_temp, params_unknown, params_known, i=i))
         
 #     return x
-
-
-# def euler_solve_concentration(f, t0, t1, dt, C0, pars):
-    
-#     # Allocate return arrays
-#     t = np.arange(t0, t1+dt, dt)
-#     params_unknown, params_known = pars
-#     C = np.zeros(len(t))
-#     C[0] = C0
-
-#     for i in range(0, (len(t) - 1)):
-        
-#         # Compute normal euler step
-#         C1 = C[i] + dt*f(t[i], C[i], params_unknown, params_known,i)
-        
-#         # Corrector step
-#         C[i+1] = C[i] + (dt/2)*(f(t[i], C[i], params_unknown, params_known,i) + f(t[i+1], C1, params_unknown, params_known,i))
-
-#     return t, C
-
-#def euler_solve_concentration(f, t0, t1, dt, C0, pars):
-    
-    # Allocate return arrays
-    #t = np.arange(t0, t1+dt, dt)
-    #params_unknown, params_known = pars
-    #C = np.zeros(len(t))
-    #C[0] = C0
-
-    #for i in range(0, (len(t) - 1)):
-        
-        # Compute normal euler step
-        #C1 = C[i] + dt*f(t[i], C[i], params_unknown, params_known,i)
-        
-        # Corrector step
-        #C[i+1] = C[i] + (dt/2)*(f(t[i], C[i], params_unknown, params_known,i) + f(t[i+1], C1, params_unknown, params_known,i))
-
-    #return t, C
