@@ -23,8 +23,6 @@ def ode_model_concentration(M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b):
     n = stock_interpolation(t-tdelay)
     P = ode_model_pressure(t, P, b, Pa, Pmar)
 
-
-
     #change infiltration depending on time that active carbon introduced
     tc = 2010
     if t-tdelay < tc:
@@ -41,7 +39,7 @@ def ode_model_concentration(M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b):
 
     dCdt = (-n * b * (P-P0)) + (bc * (P - 0.5*Pa1) * C)
     
-    return dCdt
+    return dCdt / M
 
 
 def stock_population():
@@ -105,23 +103,23 @@ def stock_interpolation(t):
     return n
 
 
-def euler_solve_concentration(f, t0, t1, dt, C0, pars):
+#def euler_solve_concentration(f, t0, t1, dt, C0, pars):
     
     # Allocate return arrays
-    t = np.arange(t0, t1+dt, dt)
-    params_unknown, params_known = pars
-    C = np.zeros(len(t))
-    C[0] = C0
+    #t = np.arange(t0, t1+dt, dt)
+    #params_unknown, params_known = pars
+    #C = np.zeros(len(t))
+    #C[0] = C0
 
-    for i in range(0, (len(t) - 1)):
+    #for i in range(0, (len(t) - 1)):
         
         # Compute normal euler step
-        C1 = C[i] + dt*f(t[i], C[i], params_unknown, params_known,i)
+        #C1 = C[i] + dt*f(t[i], C[i], params_unknown, params_known,i)
         
         # Corrector step
-        C[i+1] = C[i] + (dt/2)*(f(t[i], C[i], params_unknown, params_known,i) + f(t[i+1], C1, params_unknown, params_known,i))
+        #C[i+1] = C[i] + (dt/2)*(f(t[i], C[i], params_unknown, params_known,i) + f(t[i+1], C1, params_unknown, params_known,i))
 
-    return t, C
+    #return t, C
 
 def improved_euler_concentration(f, t0, t1, dt, C0, pars):
     ''' Solve an ODE numerically.
@@ -212,22 +210,20 @@ def plot_benchmark():
         It should contain commands to obtain analytical and numerical solutions,
         plot these, and either display the plot to the screen or save it to the disk.
     '''
-    M = 
-    t = 
-    tdelay = 
-    P = 
-    P0 = 
-    a = 
-    b1 = 
-    bc = 
-    C = 
-    Pa = 
-    Pmar = 
-    b = 
+    M = 1
+    tdelay = 0
+    P = 1
+    P0 = 1
+    a = 1
+    b1 = 1
+    bc = 1
+    Pa = 4
+    Pmar = 0 
+    b = 1
 
 
     # Numerical solution
-    t, C_Numerical = euler_solve_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, dt = 0.1, C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+    t, C_Numerical = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, dt = 0.1, C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
 
     # Analytical solution
     #def y_an(x):
@@ -253,7 +249,7 @@ def plot_benchmark():
         C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
 
     for i in range (len(inverse_stepsize)):
-        tA, CA = euler_solve_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, inverse_stepsize[i]**(-1), C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+        tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, inverse_stepsize[i]**(-1), C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
         C_Convergence[i] = CA[-1]
 
     plt.subplot(1,3,1)
