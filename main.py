@@ -5,47 +5,6 @@ from matplotlib import pyplot as plt
 import math as math
 
 ###################################################
-=======
-
-def ode_model_pressure(t, P, b, Pa, Pmar):
-    #change pressure parameter depending on time that MAR is introduced
-    tmar = 2010
-    if t < tmar:
-        Pa1 = Pa
-    else:
-        Pa1 = Pa + Pmar
-    
-    dPdt = -b * (P + (Pa/2)) - (b * (P - (Pa1/2)))
-    return dPdt
-
-def ode_model_concentration(t, C, n, M, tdelay, P, P0, a, b1, bc, Pa, Pmar, b):
-    #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
-    #inputs: C, t
-    #called inputs: n, P
-
-    n = stock_interpolation(t-tdelay)
-    P = ode_model_pressure(t, P, b, Pa, Pmar)
-
-    #change infiltration depending on time that active carbon introduced
-    tc = 2010
-    if t-tdelay < tc:
-        b = b1
-    else:
-        b = a*b1
-    #change pressure parameter depending on time that MAR is introduced
-    tmar = 2010
-    if t < tmar:
-        Pa1 = Pa
-    else:
-        Pa1 = Pa + Pmar
-
-
-    dCdt = (-n * b * (P-P0)) + (bc * (P - 0.5*Pa1) * C)
-    
-    return dCdt / M
-
-
-
 def stock_population():
     ''' Returns year and stock population from data
 
@@ -65,7 +24,6 @@ def stock_population():
     stock = np.genfromtxt('nl_cows.txt', delimiter = ',', skip_header = 1, usecols = 1)
 
     return year_stock, stock
-
 def nitrate_concentration():
     ''' Returns nitrate concentration from data
 
@@ -85,8 +43,6 @@ def nitrate_concentration():
     concentration = np.genfromtxt('nl_n.csv', delimiter = ',', skip_header = 1, usecols = 1)
 
     return year_conc, concentration
-
-
 def stock_interpolation(t):
     ''' Return stock parameter n for model
 
@@ -106,7 +62,6 @@ def stock_interpolation(t):
     n = np.interp(t, year, stock)
 
     return n
-
 ###################################################
 
 #ODE MODELS
@@ -148,56 +103,8 @@ def ode_model_concentration_sink_no_mar(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, 
     
     return dCdt / M
 
-
-
+#ODE SOLVERS
 def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, pars):
-=======
-
-
-#def euler_solve_concentration(f, t0, t1, dt, C0, pars):
-    
-    # Allocate return arrays
-    #t = np.arange(t0, t1+dt, dt)
-    #params_unknown, params_known = pars
-    #C = np.zeros(len(t))
-    #C[0] = C0
-
-    #for i in range(0, (len(t) - 1)):
-        
-        # Compute normal euler step
-        #C1 = C[i] + dt*f(t[i], C[i], params_unknown, params_known,i)
-        
-        # Corrector step
-        #C[i+1] = C[i] + (dt/2)*(f(t[i], C[i], params_unknown, params_known,i) + f(t[i+1], C1, params_unknown, params_known,i))
-
-    #return t, C
-
-def improved_euler_concentration_benchmark(f, t0, t1, dt, C0, pars):
-
-    ''' Solve an ODE numerically.
-
-        Parameters:
-        -----------
-        f : callable
-            Function that returns dxdt given variable and parameter inputs.
-        t0 : float
-            Initial time of concentration.
-        t1 : float
-            Final time of concentration.
-        dt : float
-            Time step length.
-        C0 : float
-            Initial value of concentration.
-        pars : array-like
-            List of parameters passed to ODE function f.
-
-        Returns:
-        --------
-        t : array-like
-            Independent variable concentration vector.
-        c : array-like
-            Dependent variable concentration vector.
-    '''
 
 	# initialise
     steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
@@ -217,62 +124,11 @@ def improved_euler_concentration_benchmark(f, t0, t1, dt, C0, pars):
         n = stock_interpolation(t[i]-tdelay)
         f0 = f(t[i], c[i], n, *pars)
         f1 = f(t[i] + dt, c[i] + dt * f0, n, *pars)
-
-    for i in range (steps):    
-        f0 = f(t[i], c[i], *pars)
-        f1 = f(t[i] + dt, c[i] + dt * f0, *pars)
-
 	    # Increment solution by step size x half of each derivative
         c[i+1] = c[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
 
     return t, c
-
-
 def improved_euler_pressure(f, t0, t1, dt, p0, pars):
-
-
-def improved_euler_concentration(f, t0, t1, dt, C0, pars):
-
-    ''' Solve an ODE numerically.
-
-        Parameters:
-        -----------
-        f : callable
-            Function that returns dxdt given variable and parameter inputs.
-        t0 : float
-
-            Initial time of pressure.
-        t1 : float
-            Final time of pressure.
-        dt : float
-            Time step length.
-        P0 : float
-            Initial value of pressure.
-=======
-            Initial time of concentration.
-        t1 : float
-            Final time of concentration.
-        dt : float
-            Time step length.
-        C0 : float
-            Initial value of concentration.
-
-        pars : array-like
-            List of parameters passed to ODE function f.
-
-        Returns:
-        --------
-        t : array-like
-
-            Independent variable time vector.
-        p : array-like
-            Dependent variable pressure vector.
-=======
-            Independent variable concentration vector.
-        c : array-like
-
-    '''
-
 	# initialise
     steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
     t = t0 + np.arange(steps+1) * dt			# t array
@@ -293,21 +149,8 @@ def improved_euler_concentration(f, t0, t1, dt, C0, pars):
         p[i+1] = p[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
 
     return t, p
-=======
-    c = 0. * t						        	# c array to store concentration
-    c[0] = C0							        # Set initial value
-	
-	# Iterate over all values of t
-    for i in range (steps):    
-        f0 = f(t[i], c[i], *pars)
-        f1 = f(t[i] + dt, c[i] + dt * f0, *pars)
-	    # Increment solution by step size x half of each derivative
-        c[i+1] = c[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
 
-    return t, c
-
-
-
+#PLOTTING
 def plot_given_data():
     year_stock, stock = stock_population()
     year_conc, concentration = nitrate_concentration()
@@ -328,7 +171,6 @@ def plot_given_data():
     plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
     plt.legend([conc, stck], ["Concentration", "Stock numbers"])
     plt.show()
-
 def plot_pressure_model():
 
     t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 0.5, pars = [0.05, 0.1])
@@ -337,7 +179,6 @@ def plot_pressure_model():
     plt.xlabel('t')
     plt.ylabel('Pressure (Mpa)')
     plt.show()
-
 def plot_concentration_model():
     year_stock, stock = stock_population()
     year_conc, concentration = nitrate_concentration()
@@ -362,37 +203,8 @@ def plot_concentration_model():
     # plt.legend([conc], ["Concentration", "Stock numbers"])
     # plt.show()
 
-
-def plot_benchmark_concentration():
-=======
-def plot_concentration_model():
-    ''' Plot the concentration LPM over top of the data. '''
-
-    plot_given_data()
-    t, C = improved_euler_concentration()
-    plt.plot(t, C)
-    plt.show()
-
+#BENCHMARKING
 def plot_benchmark():
-
-    ''' Compare analytical and numerical solutions.
-
-        Parameters:
-        -----------
-        none
-
-        Returns:
-        --------
-        none
-
-        Notes:
-        ------
-        This function called within if __name__ == "__main__":
-
-        It should contain commands to obtain analytical and numerical solutions,
-        plot these, and either display the plot to the screen or save it to the disk.
-    '''
-
     M = 5000000# mass parameter
     tdelay = 5 #time delay parameter
     P0 = 0.05 #surface pressure parameter
@@ -408,18 +220,7 @@ def plot_benchmark():
     t, C_Numerical = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
 
     C_Analytical = np.zeros(len(C_Numerical))
-=======
-    n = 100
-    M = 1
-    tdelay = 0
-    P = 1
-    P0 = 1
-    a = 1
-    b1 = 1
-    bc = 1
-    Pa = 4
-    Pmar = 0 
-    b = 1
+
 
 
     # Numerical solution
@@ -432,7 +233,7 @@ def plot_benchmark():
     cu_vector = np.vectorize(cu_an)
     C_Analytical = cu_vector(t)
 
-    '''
+    
 
 
     C_Error = np.zeros(len(C_Numerical))
@@ -460,16 +261,14 @@ def plot_benchmark():
         tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, dt = inverse_stepsize[i]**(-1), C0 = 0.1, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
         C_Convergence[i] = CA[-1]
 
-=======
 
-        C_Analytical[i] = 
+        #C_Analytical[i] = 
         C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
 
     for i in range (len(inverse_stepsize)):
-        tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, inverse_stepsize[i]**(-1), C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+        #tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, inverse_stepsize[i]**(-1), C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
         C_Convergence[i] = CA[-1]
 
-    '''
 
 
     plt.subplot(1,3,1)
@@ -480,10 +279,9 @@ def plot_benchmark():
     plt.xlabel('t')
     plt.ylabel('C')
 
-=======
+
     plt.show()
 
-    '''
 
 
     plt.subplot(1,3,2)
@@ -502,10 +300,6 @@ def plot_benchmark():
     plt.show()
 
 
-=======
-    '''
-
-
 
 
 if __name__ == "__main__":
@@ -513,7 +307,6 @@ if __name__ == "__main__":
     #ode_model_concentration()
     #stock_population()
     plot_given_data()
-
     plot_pressure_model()
     plot_concentration_model()
 
@@ -718,6 +511,6 @@ if __name__ == "__main__":
 
 #     plt.tight_layout()
 #     plt.show()
-=======
+
 #     return x
 
