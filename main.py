@@ -6,8 +6,6 @@ import math as math
 from numpy.core.arrayprint import dtype_is_implied
 import scipy as scipy
 from scipy.optimize import curve_fit
-
-
 ###################################################
 def stock_population():
     ''' Returns year and stock population from data
@@ -116,26 +114,9 @@ def ode_model_concentration_sink_no_mar(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, 
     #called inputs: n, P
     Pmar = 0
     P = ode_model_pressure_no_mar(t, P, b, Pa)
-    dCdt = (-n * a * b * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+    dCdt = (-n * a * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
     
     return dCdt / M    
-
-
-# combine pre and post odes for the implementation of the carbon sink situation to 
-# calibrate to data provided
-def ode_model_concentration_with_sink(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar,b):
-#parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
-    #inputs: C, t
-    #called inputs: n
-    Pmar = 0
-
-    if (t<2010):
-        dCdt = (-n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
-        return dCdt / M        
-    else:
-        dCdt = (-n * a * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
-        return dCdt / M   
-
 
 def ode_model_concentration_sink_mar(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b):
     #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
@@ -150,7 +131,22 @@ def ode_model_concentration_sink_mar(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b):
     
     return dCdt / M
 
-#numerically solves then pressure ode to find P
+# combine pre and post odes for the implementation of the carbon sink situation to 
+# calibrate to data provided
+def ode_model_concentration_with_sink(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar,b):
+#parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
+    #inputs: C, t
+    #called inputs: n
+    Pmar = 0
+    n = stock_interpolation(t-5)
+    if (t<2010):
+        dCdt = (-n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+        return dCdt / M        
+    else:
+        dCdt = (-n * a * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+        return dCdt / M   
+
+#numerically solves the pressure ode to find P
 def pressure_numerical(t0,t1,dt,b):
     n = int(np.ceil(t1-t0)/dt)
     t = t0 + np.arange(n+1)*dt
@@ -159,7 +155,6 @@ def pressure_numerical(t0,t1,dt,b):
     for i in range (n):
         p[i] = math.exp(-2*b*t[i]-126.4233635)
     return t, p
-
 
 #ODE SOLVERS
 def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, pars):
@@ -170,23 +165,17 @@ def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, pars):
     c = 0. * t						        	# c array to store concentration
     c[0] = C0							        # Set initial value
 	
-    #t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.03466,100000])
+    t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.03466,100000])
 
 	# Iterate over all values of t
-    pressure_array = pars[1]
+    pressure_array = P
     for i in range (steps):
-        #if (t[i]<2010):
-        #    #f = ode_model_concentration_no_sink_no_mar
-        #elif (t[i]<2020):
-        #    #f = ode_model_concentration_sink_no_mar
-        #else:
-            #f = ode_model_concentration_sink_mar
         pars[1] = pressure_array[i]
         n = stock_interpolation(t[i]-tdelay)
         f0 = f(t[i], c[i], n, *pars)
         f1 = f(t[i] + dt, c[i] + dt * f0, n, *pars)
 	    # Increment solution by step size x half of each derivative
-        c[i+1] = c[i] + (dt/2)*(f0+f1) 
+        c[i+1] = c[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
 
     return t, c
 
@@ -198,15 +187,9 @@ def improved_euler_pressure(f, t0, t1, dt, p0, pars):
     p[0] = p0							        # Set initial value
     b = pars[0]
     t, p_numerical = pressure_numerical(t0,t1,dt,b) # solves the pressure numerically
-    #t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.035,100000])
-    #def ode_model_pressure_no_mar(t, P, b, Pa):
 
 	# Iterate over all values of t
     for i in range (steps):
-        #if t[i] < 2019:
-        #    f = ode_model_pressure_1
-        #else:
-        #    f = ode_model_pressure_2
         f0 = f(t[i], p_numerical[i], *pars)
         f1 = f(t[i] + dt, p_numerical[i] + dt * f0, *pars)
 	    # Increment solution by step size x half of each derivative
@@ -248,62 +231,30 @@ def plot_pressure_model():
 def plot_concentration_model():
     year_stock, stock = stock_population()
     year_conc, concentration = nitrate_concentration()
-
-    # fig, ax1 = plt.subplots()
-    # plt.title("Stock numbers and concentration against time")
-    # ax1.set_xlabel("time [years]")
-    # ax1.set_ylabel("Concentration [mg/L]")
-    # conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
-
-    # ax2 = ax1.twinx()
-    # ax2.set_xlabel("time, [years]")
-    # ax2.set_ylabel("Stock numbers")
-    # stck = ax2.scatter(year_stock, stock, label = "Stock numbers", color = 'green')
-    # fig.tight_layout()
     
-    # t, C = improved_euler_concentration(ode_model_concentration_no_sink_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [5000000, 0.5, 0.05, 0.3, 0.0001, 0.0003, 0.1, 0.5,0.0003])
     t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.035,100000])
     
     #def ode_model_pressure_no_mar(t, P, b, Pa):
     #def improved_euler_pressure(f, t0, t1, dt, p0, pars):
-    t1 = 2018
-    t0 = 1980
-    dt = 0.1
-    steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
-    t = t0 + np.arange(steps+1) * dt
-    #conc = 0.*t
-    #n = concentration_interpolation(t)
-    #pc,_ = curve_fit(fit_concentration, t, P, p0 = [0.0003,0,-0.003])
-    #print(pc)
-    #a = pc[0]
-    #b = pc[1]
-    #c = pc[2]
+
+    pc,_ = curve_fit(fit_concentration, t, P, p0 = [0.0003,0,-0.035])
+    print(pc)
+    a = pc[0]
+    b = pc[1]
+    c = pc[2]
     
     #ode_model_concentration_with_sink(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b):
+    #t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [500000, P, 50000, 30000, 100, 0.003, 100000, 0,-0.035])
     
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [500000, P, 50000, 30000, 100, 0.00003, 100000, 0,-0.003])
-
-    plt.plot(t, C)
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [500000, P, 50000, 30000, 100, a, 100000, b, c])
+    plt.plot(t, -1*C)
     plt.show()
 
-    # plt.annotate(xy=[2010,250000], s='  MAR introduced')
-    # plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
-    # plt.legend([conc], ["Concentration", "Stock numbers"])
-    # plt.show()
-
-
 def fit_concentration(t,a,b,c):
-    t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.0003,100000])
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [1e13, P, 50000, 0.3, 0.0001, a, 100000, b,c])
+    t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.035,100000])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [5e5, P, 50000, 30000, 100, a, 100000, b, c])
     return C
 
-    #for i in range(len(t)):
-        #if t[i] < 2010:
-         #   t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [5000000, P, 50000, 0.3, 0.0001, a, 100000, b,c])
-         #   return C
-        #else:
-          #  t, C = improved_euler_concentration(ode_model_concentration_sink_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [5000000, P, 50000, 0.3, 0.0001, a, 100000, b,c])
-         #   return C
 
 #BENCHMARKING
 def plot_benchmark():
@@ -401,8 +352,6 @@ def plot_benchmark():
 
     plt.tight_layout()
     plt.show()
-
-
 
 if __name__ == "__main__":
     #ode_model_pressure()
