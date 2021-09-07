@@ -246,7 +246,7 @@ def plot_concentration_model():
     #ode_model_concentration_with_sink(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b):
     #t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [500000, P, 50000, 30000, 100, 0.003, 100000, 0,-0.035])
     #                                                                                                                                    M, P0, a, b1, bc, Pa, Pmar,b
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1000000000, 50000, 0.1, 0.0001, 0.001, 100000, 0, 0.03])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1000000000, 50000, 0.1, 0.0001, 22, 100000, 0, 0.003])
     plt.plot(t, C)
     plt.show()
 
@@ -358,5 +358,5 @@ if __name__ == "__main__":
     #ode_model_concentration()
     #stock_population()
     #plot_given_data()
-    plot_pressure_model()
+    #plot_pressure_model()
     plot_concentration_model()
