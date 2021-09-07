@@ -3,7 +3,6 @@ from typing import TypeVar
 import numpy as np
 from matplotlib import pyplot as plt
 import math as math
-from numpy.core.arrayprint import dtype_is_implied
 import scipy as scipy
 from scipy.optimize import curve_fit
 
@@ -68,26 +67,6 @@ def stock_interpolation(t):
     n = np.interp(t, year, stock)
 
     return n
-
-def concentration_interpolation(t):
-    ''' Return nitrate concentration parameter n for model
-
-        Parameters:
-        -----------
-        t : array-like
-            Vector of times at which to interpolate the nitrate concentration
-
-        Returns:
-        --------
-        n : array-like
-            Nitrate concentration interpolated at t.
-    '''
-
-    year, concentration = nitrate_concentration()
-
-    n = np.interp(t, year, concentration)
-
-    return n    
 ###################################################
 
 #ODE MODELS
@@ -123,17 +102,18 @@ def ode_model_concentration_sink_no_mar(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, 
 
 # combine pre and post odes for the implementation of the carbon sink situation to 
 # calibrate to data provided
-def ode_model_concentration_with_sink(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar,b):
+def ode_model_concentration_with_sink(t, C, n, M, P, P0, a, b1, bc, Pa, b):
 #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
     #inputs: C, t
     #called inputs: n
-    Pmar = 0
+    #P = ode_model_pressure_no_mar(P, b, Pa, Pmar)
+    P = ode_model_pressure_no_mar(t, P, b, Pa)
 
     if (t<2010):
         dCdt = (-n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
         return dCdt / M        
     else:
-        dCdt = (-n * a * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+        dCdt = (-n * a * b * (P-P0)) + (bc * (P - 0.5*Pa) * C)
         return dCdt / M   
 
 
@@ -142,23 +122,10 @@ def ode_model_concentration_sink_mar(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b):
     #inputs: C, t
     #called inputs: n
 
-    #ode_model_pressure_no_mar(t, P, b, Pa):
-
-    #P = ode_model_pressure_mar(P, b, Pa, Pmar)
-
+    P = ode_model_pressure_mar(P, b, Pa, Pmar)
     dCdt = (-n * a * b * (P-P0)) + (bc * (P - 0.5*(Pa+Pmar)) * C)
     
     return dCdt / M
-
-#numerically solves then pressure ode to find P
-def pressure_numerical(t0,t1,dt,b):
-    n = int(np.ceil(t1-t0)/dt)
-    t = t0 + np.arange(n+1)*dt
-    p = 0.*t
-
-    for i in range (n):
-        p[i] = math.exp(-2*b*t[i]-126.4233635)
-    return t, p
 
 
 #ODE SOLVERS
@@ -170,10 +137,8 @@ def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, pars):
     c = 0. * t						        	# c array to store concentration
     c[0] = C0							        # Set initial value
 	
-    #t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.03466,100000])
-
 	# Iterate over all values of t
-    pressure_array = pars[1]
+
     for i in range (steps):
         #if (t[i]<2010):
         #    #f = ode_model_concentration_no_sink_no_mar
@@ -181,12 +146,11 @@ def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, pars):
         #    #f = ode_model_concentration_sink_no_mar
         #else:
             #f = ode_model_concentration_sink_mar
-        pars[1] = pressure_array[i]
         n = stock_interpolation(t[i]-tdelay)
         f0 = f(t[i], c[i], n, *pars)
         f1 = f(t[i] + dt, c[i] + dt * f0, n, *pars)
 	    # Increment solution by step size x half of each derivative
-        c[i+1] = c[i] + (dt/2)*(f0+f1) 
+        c[i+1] = c[i] + (dt * (0.5 * f0[i] + 0.5 * f1[i])) 
 
     return t, c
 
@@ -194,21 +158,23 @@ def improved_euler_pressure(f, t0, t1, dt, p0, pars):
 	# initialise
     steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
     t = t0 + np.arange(steps+1) * dt			# t array
-    p = 0.*t						        	# p array to store pressure
-    p[0] = p0							        # Set initial value
-    b = pars[0]
-    t, p_numerical = pressure_numerical(t0,t1,dt,b) # solves the pressure numerically
-    #t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.035,100000])
-    #def ode_model_pressure_no_mar(t, P, b, Pa):
 
+    p = 0. * t						        	# p array to store concentration
+    p[0] = p0							        # Set initial value
+
+#    t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.035,100000])
+
+
+	
 	# Iterate over all values of t
     for i in range (steps):
         #if t[i] < 2019:
         #    f = ode_model_pressure_1
         #else:
         #    f = ode_model_pressure_2
-        f0 = f(t[i], p_numerical[i], *pars)
-        f1 = f(t[i] + dt, p_numerical[i] + dt * f0, *pars)
+        pars[]
+        f0 = f(t[i], p[i], *pars)
+        f1 = f(t[i] + dt, p[i] + dt * f0, *pars)
 	    # Increment solution by step size x half of each derivative
         p[i+1] = p[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
 
@@ -238,7 +204,7 @@ def plot_given_data():
 def plot_pressure_model():
 
     #t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 0.5, pars = [0.05, 0.1])
-    t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.03466,100000])
+    t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.035,100000])
     plt.plot(t, P)
     plt.title('Pressure')
     plt.xlabel('t')
@@ -266,22 +232,16 @@ def plot_concentration_model():
     
     #def ode_model_pressure_no_mar(t, P, b, Pa):
     #def improved_euler_pressure(f, t0, t1, dt, p0, pars):
-    t1 = 2018
-    t0 = 1980
-    dt = 0.1
-    steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
-    t = t0 + np.arange(steps+1) * dt
-    #conc = 0.*t
-    #n = concentration_interpolation(t)
-    #pc,_ = curve_fit(fit_concentration, t, P, p0 = [0.0003,0,-0.003])
-    #print(pc)
-    #a = pc[0]
-    #b = pc[1]
-    #c = pc[2]
+
+    pc,_ = curve_fit(fit_concentration, t, P, p0 = [0.0003,0,-0.0003])
+    print(pc)
+    a = pc[0]
+    b = pc[1]
+    c = pc[2]
     
-    #ode_model_concentration_with_sink(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b):
+#ode_model_concentration_with_sink(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b):
     
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [500000, P, 50000, 30000, 100, 0.00003, 100000, 0,-0.003])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [5000000, P, 50000, 30000, 100, a, 100000, b,c])
 
     plt.plot(t, C)
     plt.show()
@@ -294,9 +254,8 @@ def plot_concentration_model():
 
 def fit_concentration(t,a,b,c):
     t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 50000, pars = [-0.0003,100000])
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [1e13, P, 50000, 0.3, 0.0001, a, 100000, b,c])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [5000000, P, 50000, 0.3, 0.0001, a, 100000, b,c])
     return C
-
     #for i in range(len(t)):
         #if t[i] < 2010:
          #   t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [5000000, P, 50000, 0.3, 0.0001, a, 100000, b,c])
@@ -409,5 +368,207 @@ if __name__ == "__main__":
     #ode_model_concentration()
     #stock_population()
     #plot_given_data()
-    #plot_pressure_model()
+    plot_pressure_model()
     plot_concentration_model()
+
+
+
+
+
+#####################################################################################################
+#-functions for odes (pressure and concentration)
+#-function for reading in stock data
+#-function for reading in concentration data
+#-function for interpolating stock numbers
+#-function for solving ode model using improved eulers
+#-plot the LPM over the top of the data
+#-calibrate
+#-compare analytical and numerical plots with a benchmarking function
+#-forecast
+# Unit Tests
+#########################################################################################################
+
+# def improved_euler_pressure(f,t0, t1, dt, x0, pars):
+#     """Solve an ODE numerically.
+
+#         Parameters:
+#         -----------
+#         f : callable
+#             Function that returns dxdt given variable and parameter inputs.
+#         t0 : float
+#             Initial time value
+#         t1 : float
+#             Final time value
+#         dt : float
+#             Time step used
+#         x0 : float
+#             Initial value of solution.
+#         pars : array-like
+#             List of parameters passed to ODE function f.
+
+#         Returns:
+#         --------
+#         x : array-like
+#             Dependent variable solution vector.
+
+#         Notes:
+#         ------
+#         Assume that ODE function f takes the following inputs, in order:
+#             1. independent variable
+#             2. dependent variable
+#             3. Parameters that will later be passed to the curve fitting function
+#             4. all other parameters
+#             Refer to the function definitions for order within (3) and (4)
+#             5. Optional - counter number to be passed to array parameters
+#     """
+
+#     # Allocate return arrays
+#     t = np.arange(t0, t1+dt, dt)
+#     params_unknown, params_known = pars
+#     x = np.zeros(len(t))
+#     x[0] = x0
+#     i=0
+#     # Check if q is iterable or const
+#     if isinstance(params_known[0], float) == True:
+#         dqdt = 0
+#         if len(params_known) != 2:
+#             params_known.append(dqdt)
+#         # Loop through time values, finding corresponding x value
+#         for i in range(0, (len(t) - 1)):
+#             # Compute normal euler step
+#             x_temp = x[i] + dt*f(t[i], x[i], params_unknown, params_known)
+#             # Corrector step
+#             x[i+1] = x[i] + (dt/2)*(f(t[i], x[i], params_unknown, params_known) + f(t[i+1], x_temp, params_unknown, params_known))
+#     else:
+#         # Get dqdt and append to known parameters
+#         dqdt = np.gradient(params_known[0])
+#         if len(params_known) != 2:
+#             params_known.append(dqdt)
+#         # Loop through time values, finding corresponding x value
+#         for i in range(0, (len(t) - 1)):
+#             # Compute normal euler step
+#             x_temp = x[i] + dt*f(t[i], x[i], params_unknown, params_known, i=i)
+#             # Corrector step
+#             x[i+1] = x[i] + (dt/2)*(f(t[i], x[i], params_unknown, params_known, i=i) + f(t[i+1], x_temp, params_unknown, params_known, i=i))
+        
+
+#     return x
+
+
+# def euler_solve_concentration(f, t0, t1, dt, C0, pars):
+    
+#     # Allocate return arrays
+#     t = np.arange(t0, t1+dt, dt)
+#     params_unknown, params_known = pars
+#     C = np.zeros(len(t))
+#     C[0] = C0
+
+#     for i in range(0, (len(t) - 1)):
+        
+#         # Compute normal euler step
+#         C1 = C[i] + dt*f(t[i], C[i], params_unknown, params_known,i)
+        
+#         # Corrector step
+#         C[i+1] = C[i] + (dt/2)*(f(t[i], C[i], params_unknown, params_known,i) + f(t[i+1], C1, params_unknown, params_known,i))
+
+#     return t, C
+
+#def euler_solve_concentration(f, t0, t1, dt, C0, pars):
+    
+    # Allocate return arrays
+    #t = np.arange(t0, t1+dt, dt)
+    #params_unknown, params_known = pars
+    #C = np.zeros(len(t))
+    #C[0] = C0
+
+    #for i in range(0, (len(t) - 1)):
+        
+        # Compute normal euler step
+        #C1 = C[i] + dt*f(t[i], C[i], params_unknown, params_known,i)
+        
+        # Corrector step
+        #C[i+1] = C[i] + (dt/2)*(f(t[i], C[i], params_unknown, params_known,i) + f(t[i+1], C1, params_unknown, params_known,i))
+
+    #return t, C
+
+#   def plot_benchmark_pressure():
+#     ''' Compare analytical and numerical solutions.
+
+#         Parameters:
+#         -----------
+#         none
+
+#         Returns:
+#         --------
+#         none
+
+#         Notes:
+#         ------
+#         This function called within if __name__ == "__main__":
+
+#         It should contain commands to obtain analytical and numerical solutions,
+#         plot these, and either display the plot to the screen or save it to the disk.
+#     '''
+#     M = 5000000# mass parameter
+#     tdelay = 5 #time delay parameter
+#     P0 = 0.05 #surface pressure parameter
+#     a = 0.3 #carbon sink infiltration coefficient parameter
+#     b1 = 0.0001 #infiltration coefficient without carbon sink parameter
+#     bc = 0.0003 #fresh inflow coefficient
+#     Pa = 0.1 #pressure at high pressure boundary
+#     Pmar = 0.05 #pressure due to mar operation
+#     b = 0.0003 #recharge coefficient
+
+
+#     # Numerical solution
+#     t, P_Numerical = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+
+#     P_Analytical = np.zeros(len(P_Numerical))
+#     P_Error = np.zeros(len(P_Numerical))
+#     inverse_stepsize = np.linspace(1, 3, 21)
+#     P_Convergence = np.zeros(len(inverse_stepsize))
+
+#     for i in range (len(P_Numerical)):
+#         tmar = 2010
+#         if t[i] < tmar:
+#             Pa1 = Pa
+#         else:
+#             Pa1 = Pa + Pmar
+#         tc = 2010
+#         if t-tdelay < tc:
+#             b = b1
+#         else:
+#             b = a*b1
+#         P_Analytical[i] = -0.5*Pa*math.exp(-2*b*P) + Pa1/2
+#         P_Error[i] = abs(P_Analytical[i] - P_Numerical[i])
+
+
+#     for i in range (len(inverse_stepsize)):
+#         tA, PA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, dt = inverse_stepsize[i]**(-1), C0 = 0.1, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+#         P_Convergence[i] = PA[-1]
+
+#     plt.subplot(1,3,1)
+#     plt.plot(t,P_Numerical,'b--',label = 'Numerical')
+#     plt.plot(t,P_Analytical,'rx',label = 'Analytical')
+#     plt.legend()
+#     plt.title('Benchmark')
+#     plt.xlabel('t')
+#     plt.ylabel('C')
+
+#     plt.subplot(1,3,2)
+#     plt.plot(t,P_Error,'k-')
+#     plt.title('Error Analysis')
+#     plt.xlabel('t')
+#     plt.ylabel('Relative Error Against Benchmark')
+
+#     plt.subplot(1,3,3)
+#     plt.plot(inverse_stepsize,P_Convergence,'bx')
+#     plt.title('Timestep Convergence')
+#     plt.xlabel('1/delta t')
+#     plt.ylabel('X(t=10)')
+
+#     plt.tight_layout()
+#     plt.show()
+
+#     return x
+
