@@ -326,45 +326,35 @@ def plot_benchmark():
     t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, pars = [M, P0, a, b1, bc, Pa, Pmar, b])
 
     C_Analytical = np.zeros(len(C_Numerical))
-    # Analytical solution
-    def cu_an(x):
-        return (math.exp(-x))
-
-    cu_vector = np.vectorize(cu_an)
-    C_Analytical = cu_vector(t)
-
-
     C_Error = np.zeros(len(C_Numerical))
     inverse_stepsize = np.linspace(1, 3, 21)
     C_Convergence = np.zeros(len(inverse_stepsize))
+    # Analytical solution
+    #def cu_an(x):
+    #    return (math.exp(-x))
 
+    #cu_vector = np.vectorize(cu_an)
+    #C_Analytical = cu_vector(t)
+
+
+
+    
+    #finding error between analytical and numerical solutions
     for i in range (len(C_Numerical)):
-        tmar = 2010
-        if t[i] < tmar:
-            Pa1 = Pa
-        else:
-            Pa1 = Pa + Pmar
-        tc = 2010
-        if t-tdelay < tc:
-            b = b1
-        else:
-            b = a*b1
-
-        n = stock_interpolation(t)
-        C_Analytical[i] = math.exp(bc*(P-0.5*Pa1)*C) - (n*b*(P-P0)/(bc*(P-0.5*Pa1)))
+        C_Analytical[i] = math.exp()
         C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
 
-
+    #convergence
     for i in range (len(inverse_stepsize)):
-        tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2019, dt = inverse_stepsize[i]**(-1), C0 = 0.2, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+        tA, CA = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = inverse_stepsize[i]**(-1), C0 = 0.2, pars = [M, P0, a, b1, bc, Pa, Pmar, b])
         C_Convergence[i] = CA[-1]
+        
 
+    #for i in range (len(inverse_stepsize)):
+        #tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, inverse_stepsize[i]**(-1), C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+        #C_Convergence[i] = CA[-1]
         #C_Analytical[i] = 
-        C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
-
-    for i in range (len(inverse_stepsize)):
-        #tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2019, inverse_stepsize[i]**(-1), C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
-        C_Convergence[i] = CA[-1]
+        #C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
 
 
 
@@ -391,7 +381,7 @@ def plot_benchmark():
     plt.plot(inverse_stepsize,C_Convergence,'bx')
     plt.title('Timestep Convergence')
     plt.xlabel('1/delta t')
-    plt.ylabel('X(t=10)')
+    plt.ylabel('')
 
     plt.tight_layout()
     plt.show()
