@@ -87,8 +87,8 @@ def concentration_interpolation(t):
 
     return n    
 ###################################################
-#numerically solves the pressure ode to find P
-def pressure_numerical(t0,t1,dt,b):
+#analytically solves the pressure ode to find P
+def pressure_analytical(t0,t1,dt,b):
     n = int(np.ceil(t1-t0)/dt)
     t = t0 + np.arange(n+1)*dt
     p = 0.*t
@@ -168,7 +168,7 @@ def improved_euler_pressure(f, t0, t1, dt, p0, tmar, Pmar, pars):
     p = 0.*t						        	# p array to store pressure
     p[0] = 50000							    # Set initial value in Pa
     b = pars[0]
-    t, p_numerical = pressure_numerical(t0,t1,dt,b) # solves the pressure numerically
+    t, p_numerical = pressure_analytical(t0,t1,dt,b) # solves the pressure numerically
 
 	# Iterate over all values of t
     for i in range (steps):
