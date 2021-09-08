@@ -170,7 +170,6 @@ def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, pars):
     
     tdelay = 5
     for i in range (steps):
-        #pars[1] = pressure_array[i]
         P = pressure_array[i]
         n = stock_interpolation(t[i]-tdelay)
         f0 = f(t[i], c[i], n, P, *pars)
@@ -215,10 +214,11 @@ def plot_given_data():
     stck = ax2.scatter(year_stock, stock, label = "Stock numbers", color = 'green')
     fig.tight_layout()
 
-    plt.annotate(xy=[2010,250000], s='  MAR introduced')
+    plt.annotate(xy=[2010,250000], s=' Sink introduced')
     plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
     plt.legend([conc, stck], ["Concentration", "Stock numbers"])
     plt.show()
+
 def plot_pressure_model():
 
     #t, P = improved_euler_pressure(ode_model_pressure_no_mar, t0 = 1980, t1 = 2018, dt = 0.1, p0 = 0.5, pars = [0.05, 0.1])
@@ -237,39 +237,65 @@ def plot_concentration_model():
     
     ci = np.interp(t, year_conc, concentration)
     
-    cc,_ = curve_fit(fit_concentration, t, ci, p0 = [0.1, 0.0001])
+    #cc,_ = curve_fit(fit_concentration, t, ci, p0 = [0.3, 0.0001])
     
-    a = cc[0]
-    b = cc[1]
-    print(a)
-    print(b)
-    
-    
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1000000000, 50000, a, b, 30, 100000, 0, 0.003])
+    #a = cc[0]
+    #b = cc[1]
+    #print(a)
+    #print(b)
+    #                                                                                                                                    M, P0, a, b1, bc, Pa, Pmar, b
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1e9, 50000, -0.18463230481350532,0.01674194787021388 ,30, 100000, 0, 0.003])
     plt.plot(t, C)
     plt.show()
+
+
+
+    
     #-0.18463230481350532
     #0.01674194787021388
 
 def fit_concentration(t,a,b):
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [1000000000, 50000, a, b, 30, 100000, 0, 0.003])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [8e8, 50000, a, b, 0.3, 100000, 0, 0.03])
     return C
 
+def plot_conc_and_given():
+    year_stock, stock = stock_population()
+    year_conc, concentration = nitrate_concentration()
+
+    fig, ax1 = plt.subplots()
+    plt.title("Stock numbers and concentration against time")
+    ax1.set_xlabel("time [years]")
+    ax1.set_ylabel("Concentration [mg/L]")
+    conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1e9, 50000, -0.18463230481350532,0.01674194787021388 ,30, 100000, 0, 0.003])
+    plt.plot(t, C, color = 'black')
+
+    ax2 = ax1.twinx()
+    ax2.set_xlabel("time, [years]")
+    ax2.set_ylabel("Stock numbers")
+    stck = ax2.scatter(year_stock, stock, label = "Stock numbers", color = 'green')
+    fig.tight_layout()
+
+    
+    plt.annotate(xy=[2010,250000], s=' Sink introduced')
+    plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
+    plt.legend([conc, stck], ["Concentration", "Stock numbers"])
+    plt.show()
 
 #BENCHMARKING
 def plot_benchmark():
     # order inputted into ode_model_concentration(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b)
     # order inputted into improved_euler_concentration(f, t0, t1, dt, C0, tdelay, pars):
 
-    M = 5000000# mass parameter (estimated)
-    tdelay = 5 #time delay parameter (given)
-    P0 = 50000 #surface pressure parameter (given)
-    Pa = 100000 #pressure at high pressure boundary (given)
+    M = 1e9 # mass parameter (estimated)
+    tdelay = 5 #time delay in years parameter (given)
+    P0 = 50000 #surface pressure parameter in Pa (given)
+    Pa = 100000 #pressure drop at high pressure boundary in Pa(given)
     a = 0.3 #carbon sink infiltration coefficient parameter (justin gave)
     b1 = 0.0001 #infiltration coefficient without carbon sink parameter (justin gave)
     bc = 0.0003 #fresh inflow coefficient (to calibrate)
-    Pmar = 50000 #pressure due to mar operation (to calibrate)
-    b = 0.0003 #recharge coefficient (to calibrate)
+    Pmar = 0 #pressure due to mar operation (0 for only sink implementation)
+    b = 0.003 #recharge coefficient (to calibrate)
 
 
     # Numerical solution
@@ -360,3 +386,4 @@ if __name__ == "__main__":
     #plot_given_data()
     #plot_pressure_model()
     plot_concentration_model()
+    #plot_conc_and_given()
