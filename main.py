@@ -291,9 +291,6 @@ def plot_conc_and_given():
 
 #BENCHMARKING
 def plot_benchmark():
-    # order inputted into ode_model_concentration(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b)
-    # order inputted into improved_euler_concentration(f, t0, t1, dt, C0, tdelay, pars):
-
     M = 1e9 # mass parameter (estimated)
     tdelay = 5 #time delay in years parameter (given)
     P0 = 50000 #surface pressure parameter in Pa (given)
@@ -306,15 +303,9 @@ def plot_benchmark():
 
 
     # Numerical solution
-    t, C_Numerical = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+    t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, pars = [M, P0, a, b1, bc, Pa, Pmar, b])
 
     C_Analytical = np.zeros(len(C_Numerical))
-
-
-
-    # Numerical solution
-    t, C_Numerical = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 1, pars = [n, M, tdelay, P, P0, a, b1, bc, Pa, Pmar, b])
-
     # Analytical solution
     def cu_an(x):
         return (math.exp(-x))
