@@ -336,7 +336,7 @@ def plot_benchmark():
     #cu_vector = np.vectorize(cu_an)
     #C_Analytical = cu_vector(t)
 
-
+    #REMEMBER TO ADD A BOOLEAN OPERATOR FOR WHEN THE ODE CHANGES TO THE SINK VERSION
 
     
     #finding error between analytical and numerical solutions
