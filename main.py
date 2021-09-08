@@ -139,7 +139,7 @@ def ode_model_concentration_with_sink(t, C, n, P, M, P0, a, b1, bc, Pa, Pmar,b):
     #called inputs: n
     Pmar = 0
     n = stock_interpolation(t-5)
-    if (t<2010):
+    if (t<2015):
         dCdt = (n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
         return dCdt / M        
     else:
@@ -184,7 +184,7 @@ def improved_euler_pressure(f, t0, t1, dt, p0, pars):
     steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
     t = t0 + np.arange(steps+1) * dt			# t array
     p = 0.*t						        	# p array to store pressure
-    p[0] = p0							        # Set initial value
+    p[0] = 50000							        # Set initial value
     b = pars[0]
     t, p_numerical = pressure_numerical(t0,t1,dt,b) # solves the pressure numerically
 
@@ -230,32 +230,36 @@ def plot_pressure_model():
     plt.show()
 
 def plot_concentration_model():
-    year_stock, stock = stock_population()
-    year_conc, concentration = nitrate_concentration()
+    #   [ 4.54391383e-01  5.30450263e-02 -1.37058256e+03]
+    #[ 6.49474256e-01  8.70926035e-01 -3.12050719e+04]
     
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1000000000, 50000, 0.1, 0.0001, 30, 100000, 0, 0.003])
-    
-    ci = np.interp(t, year_conc, concentration)
-    
-    #cc,_ = curve_fit(fit_concentration, t, ci, p0 = [0.3, 0.0001])
-    
-    #a = cc[0]
-    #b = cc[1]
-    #print(a)
-    #print(b)
-    #                                                                                                                                    M, P0, a, b1, bc, Pa, Pmar, b
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1e9, 50000, -0.18463230481350532,0.01674194787021388 ,30, 100000, 0, 0.003])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1e9, 5e4, 0.65, 0.87, -30000, 1e5, 0, -0.03466])
     plt.plot(t, C)
     plt.show()
 
-
-
+def plot_concentration_model_with_curve_fit():  
+    year_stock, stock = stock_population()
+    year_conc, concentration = nitrate_concentration()
     
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1e9, 5e4, 0.3, 0.0001, 0.0003, 1e5, 0, -0.03466])
+    ci = np.interp(t, year_conc, concentration)
+    
+    cc,_ = curve_fit(fit_concentration, t, ci)
+    print(cc)
+    a = cc[0]
+    b = cc[1]
+    c = cc[2]
+    #d = cc[3]
+    #                                                                                                                                    M, P0, a, b1, bc, Pa, Pmar, b
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1e9, 50000,a, b,c , 100000, 0, -0.03466])
+    plt.plot(t, C)
+    plt.show()
+    #   [ 4.54391383e-01  5.30450263e-02 -1.37058256e+03]
     #-0.18463230481350532
     #0.01674194787021388
 
-def fit_concentration(t,a,b):
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [8e8, 50000, a, b, 0.3, 100000, 0, 0.03])
+def fit_concentration(t,a,b,c):
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.1, tdelay = 5, pars = [1e9, 50000, a,b, c, 100000, 0, -0.03466])
     return C
 
 def plot_conc_and_given():
@@ -267,7 +271,10 @@ def plot_conc_and_given():
     ax1.set_xlabel("time [years]")
     ax1.set_ylabel("Concentration [mg/L]")
     conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1e9, 50000, -0.18463230481350532,0.01674194787021388 ,30, 100000, 0, 0.003])
+    #t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1e9, 50000, -0.18463230481350532,0.01674194787021388 ,30, 100000, 0, 0.003])
+    #t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [1e9, 5e4, 0.45, 0.053, -1370, 1e5, 0, 0.003])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = 0.1, C0 = 0.2, tdelay = 5, pars = [2e9, 5e4, 0.65, 0.87, -30000, 1e5, 0, -0.003])
+
     plt.plot(t, C, color = 'black')
 
     ax2 = ax1.twinx()
@@ -384,6 +391,7 @@ if __name__ == "__main__":
     #ode_model_concentration()
     #stock_population()
     #plot_given_data()
-    #plot_pressure_model()
-    plot_concentration_model()
-    #plot_conc_and_given()
+    plot_pressure_model()
+    #plot_concentration_model()
+    plot_conc_and_given()
+    #plot_concentration_model_with_curve_fit()
