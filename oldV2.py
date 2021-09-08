@@ -7,7 +7,6 @@ from numpy.core.arrayprint import dtype_is_implied
 import scipy as scipy
 from scipy.optimize import curve_fit
 ###################################################
-#read in functions
 def stock_population():
     ''' Returns year and stock population from data
 
@@ -27,6 +26,7 @@ def stock_population():
     stock = np.genfromtxt('nl_cows.txt', delimiter = ',', skip_header = 1, usecols = 1)
 
     return year_stock, stock
+
 def nitrate_concentration():
     ''' Returns nitrate concentration from data
 
@@ -46,8 +46,7 @@ def nitrate_concentration():
     concentration = np.genfromtxt('nl_n.csv', delimiter = ',', skip_header = 1, usecols = 1)
 
     return year_conc, concentration
-###################################################
-#interpolation functions
+
 def stock_interpolation(t):
     ''' Return stock parameter n for model
 
@@ -67,6 +66,7 @@ def stock_interpolation(t):
     n = np.interp(t, year, stock)
 
     return n
+
 def concentration_interpolation(t):
     ''' Return nitrate concentration parameter n for model
 
@@ -87,6 +87,66 @@ def concentration_interpolation(t):
 
     return n    
 ###################################################
+
+#ODE MODELS
+def ode_model_pressure_no_mar(t, P, b, Pa):
+
+    dPdt = -b * (P + (Pa/2)) - (b * (P - (Pa/2)))
+    return dPdt
+
+def ode_model_pressure_mar(t, P, b, Pa, Pmar):
+    
+    dPdt = -b * (P + (Pa/2)) - (b * (P - ((Pa+Pmar)/2)))
+    return dPdt
+
+def ode_model_concentration_no_sink_no_mar(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b):
+    #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
+    #inputs: C, t
+    #called inputs: n
+    P = ode_model_pressure_no_mar(t, P, b, Pa)
+    dCdt = (-n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+    
+    return dCdt / M
+
+def ode_model_concentration_sink_no_mar(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b):
+    #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
+    #inputs: C, t
+    #called inputs: n, P
+    Pmar = 0
+    P = ode_model_pressure_no_mar(t, P, b, Pa)
+    dCdt = (-n * a * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+    
+    return dCdt / M    
+
+def ode_model_concentration_sink_mar(t, C, n, M, P, P0, a, b1, bc, Pa, Pmar, b):
+    #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
+    #inputs: C, t
+    #called inputs: n
+
+    #ode_model_pressure_no_mar(t, P, b, Pa):
+
+    #P = ode_model_pressure_mar(P, b, Pa, Pmar)
+
+    dCdt = (-n * a * b * (P-P0)) + (bc * (P - 0.5*(Pa+Pmar)) * C)
+    
+    return dCdt / M
+
+# combine pre and post odes for the implementation of the carbon sink situation to 
+# calibrate to data provided
+def ode_model_concentration_with_sink(t, C, n, P, M, P0, a, b1, bc, Pa, Pmar,b):
+    #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
+    #inputs: C, t
+    #called inputs: n
+    Pmar = 0
+    tdelay = 2
+    n = stock_interpolation(t-tdelay)
+    if (t<2012):
+        dCdt = (n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+        return dCdt / M        
+    else:
+        dCdt = (n * a * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+        return dCdt / M   
+
 #numerically solves the pressure ode to find P
 def pressure_numerical(t0,t1,dt,b):
     n = int(np.ceil(t1-t0)/dt)
@@ -96,46 +156,25 @@ def pressure_numerical(t0,t1,dt,b):
     for i in range (n):
         p[i] = math.exp(-2*b*t[i]-126.4233635)
     return t, p
-###################################################
-#ODE MODELS
-def ode_model_pressure_no_mar(t, P, b, Pa):
 
-    dPdt = -b * (P + (Pa/2)) - (b * (P - (Pa/2)))
-    return dPdt
-
-def ode_model_concentration_with_sink(t, C, n, P, tdelay, tmar, M, P0, a, b1, bc, Pa, Pmar,b):
+def ode_pressure_with_mar_model():
     #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
     #inputs: C, t
     #called inputs: n
+    Pmar = 0
+    tmar
+    tdelay = 2
     n = stock_interpolation(t-tdelay)
-    if (t<2012):
+    if (t<tmar):
         dCdt = (n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
         return dCdt / M        
     else:
         dCdt = (n * a * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
         return dCdt / M  
 
-def ode_model_concentration_no_sink(t, C, n, P, tdelay, tmar, M, P0, a, b1, bc, Pa, Pmar, b):
-    #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
-    #inputs: C, t
-    #called inputs: n
-    n = stock_interpolation(t-tdelay)
-    dCdt = (-n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
-    
-    return dCdt / M
 
-def ode_model_pressure_with_mar(t, C, n, P, tdelay, tmar, M, P0, a, b1, bc, Pa, Pmar, b):
-    #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
-    #inputs: C, t
-    #called inputs: n
-    if (t<tmar):
-        dPdt = -b * (P + (Pa/2)) - (b * (P - (Pa/2)))
-        return dPdt      
-    else:
-        dPdt = -b * (P + (Pa/2)) - (b * (P - ((Pa+Pmar)/2)))
-        return dPdt
- 
-###################################################
+
+
 #ODE SOLVERS
 def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, pars):
 
@@ -176,7 +215,7 @@ def improved_euler_pressure(f, t0, t1, dt, p0, pars):
         p[i+1] = p[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
 
     return t, p
-###################################################
+
 #PLOTTING
 def plot_given_data():
     year_stock, stock = stock_population()
@@ -295,35 +334,45 @@ def plot_benchmark():
     t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, pars = [M, P0, a, b1, bc, Pa, Pmar, b])
 
     C_Analytical = np.zeros(len(C_Numerical))
+    # Analytical solution
+    def cu_an(x):
+        return (math.exp(-x))
+
+    cu_vector = np.vectorize(cu_an)
+    C_Analytical = cu_vector(t)
+
+
     C_Error = np.zeros(len(C_Numerical))
     inverse_stepsize = np.linspace(1, 3, 21)
     C_Convergence = np.zeros(len(inverse_stepsize))
-    # Analytical solution
-    #def cu_an(x):
-    #    return (math.exp(-x))
 
-    #cu_vector = np.vectorize(cu_an)
-    #C_Analytical = cu_vector(t)
-
-
-
-    
-    #finding error between analytical and numerical solutions
     for i in range (len(C_Numerical)):
-        C_Analytical[i] = math.exp()
+        tmar = 2010
+        if t[i] < tmar:
+            Pa1 = Pa
+        else:
+            Pa1 = Pa + Pmar
+        tc = 2010
+        if t-tdelay < tc:
+            b = b1
+        else:
+            b = a*b1
+
+        n = stock_interpolation(t)
+        C_Analytical[i] = math.exp(bc*(P-0.5*Pa1)*C) - (n*b*(P-P0)/(bc*(P-0.5*Pa1)))
         C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
 
-    #convergence
-    for i in range (len(inverse_stepsize)):
-        tA, CA = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = inverse_stepsize[i]**(-1), C0 = 0.2, pars = [M, P0, a, b1, bc, Pa, Pmar, b])
-        C_Convergence[i] = CA[-1]
-        
 
-    #for i in range (len(inverse_stepsize)):
-        #tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, inverse_stepsize[i]**(-1), C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
-        #C_Convergence[i] = CA[-1]
+    for i in range (len(inverse_stepsize)):
+        tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2019, dt = inverse_stepsize[i]**(-1), C0 = 0.2, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+        C_Convergence[i] = CA[-1]
+
         #C_Analytical[i] = 
-        #C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
+        C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
+
+    for i in range (len(inverse_stepsize)):
+        #tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2019, inverse_stepsize[i]**(-1), C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
+        C_Convergence[i] = CA[-1]
 
 
 
@@ -350,7 +399,7 @@ def plot_benchmark():
     plt.plot(inverse_stepsize,C_Convergence,'bx')
     plt.title('Timestep Convergence')
     plt.xlabel('1/delta t')
-    plt.ylabel('')
+    plt.ylabel('X(t=10)')
 
     plt.tight_layout()
     plt.show()
