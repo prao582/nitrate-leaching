@@ -4,6 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math as math
 from numpy.core.arrayprint import dtype_is_implied
+from numpy.testing._private.utils import break_cycles
 import scipy as scipy
 from scipy.optimize import curve_fit
 ###################################################
@@ -311,19 +312,24 @@ def plot_mar_and_given():
 ###################################################
 #BENCHMARKING
 def plot_benchmark():
-    M = 1e9 # mass parameter (estimated)
-    tdelay = 2 #time delay in years parameter (given)
-    P0 = 50000 #surface pressure parameter in Pa (given)
-    Pa = 100000 #pressure drop at high pressure boundary in Pa(given)
-    a = 0.3 #carbon sink infiltration coefficient parameter (justin gave)
-    b1 = 0.0001 #infiltration coefficient without carbon sink parameter (justin gave)
-    bc = 0.0003 #fresh inflow coefficient (to calibrate)
+    # M = 1e9 # mass parameter (estimated)
+    # tdelay = 2 #time delay in years parameter (given)
+    # P0 = 50000 #surface pressure parameter in Pa (given)
+    # Pa = 100000 #pressure drop at high pressure boundary in Pa(given)
+    # a = 0.3 #carbon sink infiltration coefficient parameter (justin gave)
+    # b1 = 0.0001 #infiltration coefficient without carbon sink parameter (justin gave)
+    # bc = 0.0003 #fresh inflow coefficient (to calibrate)
     Pmar = 0 #pressure due to mar operation (0 for only sink implementation)
-    b = 0.003 #recharge coefficient (to calibrate)
-
-
+    # b = 0.003 #recharge coefficient (to calibrate)
+    M = 1e9
+    P0 = 5e4
+    a = 6.50424868e-01
+    b1 = 7.35181289e-01
+    bc = -3.39986410e+04
+    Pa = 1e5
+    b = -0.03466
     # Numerical solution
-    t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, pars = [M, P0, a, b1, bc, Pa, Pmar, b])
+    t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 50000, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
 
     C_Analytical = np.zeros(len(C_Numerical))
     C_Error = np.zeros(len(C_Numerical))
@@ -337,24 +343,27 @@ def plot_benchmark():
     #C_Analytical = cu_vector(t)
 
     #REMEMBER TO ADD A BOOLEAN OPERATOR FOR WHEN THE ODE CHANGES TO THE SINK VERSION
-
+    k = bc
+    c = -126.4233635
+    j = 2*b
+    #c1
+    
     
     #finding error between analytical and numerical solutions
     for i in range (len(C_Numerical)):
-        C_Analytical[i] = math.exp()
+        if t[i]<2012:
+            g = stock_interpolation(t[i])*b1
+        else:
+            g = stock_interpolation(t[i])*b1 * a
+        C_Analytical[i] = (math.exp((-k*math.exp(c-j*t[i]) + k*j)/(j*M)/k)) - (g/k)
         C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
 
     #convergence
-    for i in range (len(inverse_stepsize)):
-        tA, CA = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2018, dt = inverse_stepsize[i]**(-1), C0 = 0.2, pars = [M, P0, a, b1, bc, Pa, Pmar, b])
+    for i in range (0, len(inverse_stepsize)):
+        tA, CA = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = inverse_stepsize[i]**(-1), C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 0, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
         C_Convergence[i] = CA[-1]
         
-
-    #for i in range (len(inverse_stepsize)):
-        #tA, CA = improved_euler_concentration(ode_model_concentration, t0 = 1980, t1 = 2018, inverse_stepsize[i]**(-1), C0 = ?, pars = [M, t, tdelay, P, P0, a, b1, bc, C, Pa, Pmar, b])
-        #C_Convergence[i] = CA[-1]
-        #C_Analytical[i] = 
-        #C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
+        
 
 
 
@@ -365,12 +374,7 @@ def plot_benchmark():
     plt.title('Benchmark')
     plt.xlabel('t')
     plt.ylabel('C')
-
-
-    plt.show()
-
-
-
+    #plt.show()
     plt.subplot(1,3,2)
     plt.plot(t,C_Error,'k-')
     plt.title('Error Analysis')
@@ -394,5 +398,8 @@ if __name__ == "__main__":
     #plot_pressure_model()
     #plot_concentration_model()
     #plot_sink_and_given()
-    plot_mar_and_given()
+    #plot_mar_and_given()
     #plot_concentration_model_with_curve_fit()
+    #n = stock_interpolation(2000.96)
+    #print(n)
+    plot_benchmark()
