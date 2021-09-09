@@ -422,14 +422,14 @@ def plot_benchmark_pressure():
     
     P_Analytical = np.zeros(len(P_Numerical))
     P_Error = np.zeros(len(P_Numerical))
-    inverse_stepsize = np.linspace(1, 3, 21)
+    inverse_stepsize = np.linspace(1, 10, 11)
     P_Convergence = np.zeros(len(inverse_stepsize))
 
     for i in range (len(P_Numerical)):
         P_Analytical[i] = math.exp(-2*-0.03466*t[i]-126.4233635)
         P_Error[i] = abs(P_Analytical[i] - P_Numerical[i])
 
-    for i in range (0, len(inverse_stepsize)):
+    for i in range (len(inverse_stepsize)):
         tA, PA = improved_euler_pressure(ode_model_pressure_with_sink, t0 = 1980, t1 = 2019, dt = inverse_stepsize[i]**(-1), p0 = 50000, tmar = 2020, Pmar = 50000, pars = [-0.03466,100000])
         P_Convergence[i] = PA[-1]
         
@@ -464,22 +464,25 @@ def plot_benchmark_concentration():
     # a = 0.3 #carbon sink infiltration coefficient parameter (justin gave)
     # b1 = 0.0001 #infiltration coefficient without carbon sink parameter (justin gave)
     # bc = 0.0003 #fresh inflow coefficient (to calibrate)
-    Pmar = 0 #pressure due to mar operation (0 for only sink implementation)
+    #Pmar = 0 #pressure due to mar operation (0 for only sink implementation)
     # b = 0.003 #recharge coefficient (to calibrate)
+    
     M = 1e9
     P0 = 5e4
     a = 6.50424868e-01
     b1 = 7.35181289e-01
     bc = -3.39986410e+04
     Pa = 1e5
+    Pmar = 0
     b = -0.03466
+    
     # Numerical solution                                                                                                                        t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, Pmar,b
     t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
     #t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1, 0, 0.5 , 1, -1, 0, 0, -0.03466])
 
     C_Analytical = np.zeros(len(C_Numerical))
     C_Error = np.zeros(len(C_Numerical))
-    inverse_stepsize = np.linspace(1, 3, 21)
+    inverse_stepsize = np.linspace(1, 3, 31)
     C_Convergence = np.zeros(len(inverse_stepsize))
     
     k = bc
