@@ -417,7 +417,46 @@ def plot_mar_and_given():
 
 ###################################################
 #BENCHMARKING
-def plot_benchmark():
+def plot_benchmark_pressure():
+    t, P_Numerical = improved_euler_pressure(ode_model_pressure_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, p0 = 50000, tmar = 2020, Pmar = 50000, pars = [-0.03466,100000])
+    
+    P_Analytical = np.zeros(len(P_Numerical))
+    P_Error = np.zeros(len(P_Numerical))
+    inverse_stepsize = np.linspace(1, 3, 21)
+    P_Convergence = np.zeros(len(inverse_stepsize))
+
+    for i in range (len(P_Numerical)):
+        P_Analytical[i] = math.exp(-2*-0.03466*t[i]-126.4233635)
+        P_Error[i] = abs(P_Analytical[i] - P_Numerical[i])
+
+    for i in range (0, len(inverse_stepsize)):
+        tA, PA = improved_euler_pressure(ode_model_pressure_with_sink, t0 = 1980, t1 = 2019, dt = inverse_stepsize[i]**(-1), p0 = 50000, tmar = 2020, Pmar = 50000, pars = [-0.03466,100000])
+        P_Convergence[i] = PA[-1]
+        
+    plt.subplot(1,3,1)
+    plt.plot(t,P_Numerical,'b--',label = 'Numerical')
+    plt.plot(t,P_Analytical,'rx',label = 'Analytical')
+    plt.legend()
+    plt.title('Benchmark')
+    plt.xlabel('t')
+    plt.ylabel('P')
+    
+    plt.subplot(1,3,2)
+    plt.plot(t,P_Error,'k-')
+    plt.title('Error Analysis')
+    plt.xlabel('t')
+    plt.ylabel('Relative Error Against Benchmark')
+
+    plt.subplot(1,3,3)
+    plt.plot(inverse_stepsize,P_Convergence,'bx')
+    plt.title('Timestep Convergence')
+    plt.xlabel('1/delta t')
+    plt.ylabel('')
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_benchmark_concentration():
     # M = 1e9 # mass parameter (estimated)
     # tdelay = 2 #time delay in years parameter (given)
     # P0 = 50000 #surface pressure parameter in Pa (given)
@@ -434,25 +473,20 @@ def plot_benchmark():
     bc = -3.39986410e+04
     Pa = 1e5
     b = -0.03466
-    # Numerical solution
-    t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 50000, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    # Numerical solution                                                                                                                        t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, Pmar,b
+    t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    #t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1, 0, 0.5 , 1, -1, 0, 0, -0.03466])
 
     C_Analytical = np.zeros(len(C_Numerical))
     C_Error = np.zeros(len(C_Numerical))
     inverse_stepsize = np.linspace(1, 3, 21)
     C_Convergence = np.zeros(len(inverse_stepsize))
-    # Analytical solution
-    #def cu_an(x):
-    #    return (math.exp(-x))
-
-    #cu_vector = np.vectorize(cu_an)
-    #C_Analytical = cu_vector(t)
-
-    #REMEMBER TO ADD A BOOLEAN OPERATOR FOR WHEN THE ODE CHANGES TO THE SINK VERSION
+    
     k = bc
     c = -126.4233635
     j = 2*b
-    #c1
+    c1 = 0
+    h = 2
     
     
     #finding error between analytical and numerical solutions
@@ -462,11 +496,13 @@ def plot_benchmark():
         else:
             g = stock_interpolation(t[i])*b1 * a
         C_Analytical[i] = (math.exp((-k*math.exp(c-j*t[i]) + k*j)/(j*M)/k)) - (g/k)
+        #C_Analytical[i] = math.exp(-( math.exp((-2*t[i])/2) ) + c1) - g  
         C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
 
     #convergence
     for i in range (0, len(inverse_stepsize)):
-        tA, CA = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = inverse_stepsize[i]**(-1), C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 0, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+        tA, CA = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = inverse_stepsize[i]**(-1), C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+        #tA, CA = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = inverse_stepsize[i]**(-1), C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1, 0, 0.5 , 1, -1, 0, 0, -0.03466])
         C_Convergence[i] = CA[-1]
         
         
@@ -500,12 +536,13 @@ if __name__ == "__main__":
     #ode_model_pressure()
     #ode_model_concentration()
     #stock_population()
-    #plot_given_data()
-    #plot_pressure_model()
-    #plot_concentration_model()
-    #plot_sink_and_given()
-    #plot_mar_and_given()
+    # plot_given_data()
+    # plot_concentration_model_sink()
+    # plot_concentration_model_mar()
+    # plot_sink_and_given()
+    # plot_mar_and_given()
     #plot_concentration_model_with_curve_fit()
     #n = stock_interpolation(2000.96)
     #print(n)
-    plot_benchmark()
+    #plot_benchmark_concentration()
+    plot_benchmark_pressure()
