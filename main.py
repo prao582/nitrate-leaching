@@ -90,6 +90,23 @@ def concentration_interpolation(t):
 ###################################################
 #analytically solves the pressure ode to find P
 def pressure_analytical(t0,t1,dt,b):
+    ''' Returns time and pressure solved numerically arrays
+
+        Parameters:
+        -----------
+        t0: Starting year
+        t1: Ending year
+        dt: Step size (in years)
+        b: parameter
+
+        Returns:
+        --------
+        t :  array-like
+                Vector of times (years) at which measurements were taken.
+        P : array-like
+                Vector of pressure values in Pa
+    '''
+        
     n = int(np.ceil(t1-t0)/dt)
     t = t0 + np.arange(n+1)*dt
     p = 0.*t
@@ -100,16 +117,50 @@ def pressure_analytical(t0,t1,dt,b):
 ###################################################
 #ODE MODELS
 def ode_model_pressure_with_sink(t, P, tmar, Pmar, b, Pa):
+    ''' Returns dPdt using the pressure ode provided for the carbon sink scenario
 
+        Parameters:
+        -----------
+        t: time in years
+        P: Pressure in Pa (unknown)
+        tmar: when MAR program is implemented (year)
+        Pmar: Pressure drop the MAR program produces
+        b = recharge coefficient         
+        Pa: Pressure drop at high pressure boundary in Pa
+
+        Returns:
+        --------
+        dPdt: Pressure derivative solved for a point in time (t)
+    '''
+    
     dPdt = -b * (P + (Pa/2)) - (b * (P - (Pa/2)))
     return dPdt
 
 def ode_model_concentration_with_sink(t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, Pmar,b):
-    #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
-    #inputs: C, t
-    #called inputs: n
+    ''' Returns dCdt using the pressure ode provided for the carbon sink scenario
+
+        Parameters:
+        -----------
+        t: time in years
+        C: Concentration (unknown)
+        n: number of stock 
+        P: Pressure in Pa 
+        tdelay: time delay in years
+        M: Mass Parameter (kg)
+        P0: surface pressure parameter in Pa
+        a: carbon sink infiltration coefficient parameter 
+        b1: infiltration coefficient without carbon sink parameter 
+        bc: fresh inflow coefficient
+        Pa: Pressure drop at high pressure boundary in Pa
+        Pmar: Pressure drop the MAR program produces
+        b = recharge coefficient         
+
+        Returns:
+        --------
+        dCdt: Concentration derivative solved for a point in time (t)
+    '''    
     n = stock_interpolation(t-tdelay)
-    if (t<2012):
+    if (t<2012): # 2012 takes into account the 2 year delay after 2010 when the sink is installed
         dCdt = (n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
         return dCdt / M        
     else:
@@ -117,18 +168,48 @@ def ode_model_concentration_with_sink(t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, 
         return dCdt / M  
 
 def ode_model_concentration_with_mar(t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, Pmar, b):
-    #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
-    #inputs: C, t
-    #called inputs: n
-    n = stock_interpolation(t-tdelay)
+    ''' Returns dCdt using the pressure ode provided for the MAR scenario
+
+        Parameters:
+        -----------
+        t: time in years
+        C: Concentration
+        n: number of stock 
+        P: Pressure in Pa 
+        tdelay: time delay in years
+        M: Mass Parameter (kg)
+        P0: surface pressure parameter in Pa
+        a: carbon sink infiltration coefficient parameter 
+        b1: infiltration coefficient without carbon sink parameter 
+        bc: fresh inflow coefficient
+        Pa: Pressure drop at high pressure boundary in Pa
+        Pmar: Pressure drop the MAR program produces in Pa
+        b = recharge coefficient         
+
+        Returns:
+        --------
+        dCdt: Concentration derivative solved for a point in time (t)
+    '''  
+    n = stock_interpolation(t-tdelay) 
     dCdt = (n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
     
     return dCdt / M
 
 def ode_model_pressure_with_mar(t, P, tmar, Pmar, b, Pa):
-    #parameters: M, tdelay, P0, bc, a, b1, Pa, Pmar
-    #inputs: C, t
-    #called inputs: n
+    ''' Returns dPdt using the pressure ode provided for the MAR scenario
+
+        Parameters:
+        -----------
+        t: time in years
+        P: Pressure in Pa (unknown)
+        tmar: when MAR program is implemented (year)
+        b = recharge coefficient         
+        Pa: Pressure drop at high pressure boundary in Pa
+        
+        Returns:
+        --------
+        dPdt: Pressure derivative solved for a point in time (t)
+    '''
     if (t<tmar):
         dPdt = -b * (P + (Pa/2)) - (b * (P - (Pa/2)))
         return dPdt      
@@ -138,18 +219,35 @@ def ode_model_pressure_with_mar(t, P, tmar, Pmar, b, Pa):
  
 ###################################################
 #ODE SOLVERS
-def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, tmar, Pmar, pars):
+def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, tmar, pars):
+    ''' Returns array of Concentration and Time solved using Improved Eulers Method
 
+        Parameters:
+        -----------
+        f: function to solve (concentration ode model)
+        t0: Starting year
+        t1: Ending year
+        dt: Step size (in years)
+        C0: Initial concentration
+        tdelay: time delay in years
+        tmar: when MAR program is implemented (year)
+        pars: M, P0, a, b1, bc, Pa, Pmar, b
+
+        Returns:
+        --------
+        t: Time array in years of step size dt
+        c: Concentration array solved for all points in time (t)
+    ''' 
 	# initialise
     steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
     t = t0 + np.arange(steps+1) * dt			# t array
     c = 0. * t						        	# c array to store concentration
-    c[0] = C0							        # Set initial value
+    c[0] = C0							        # Set initial value of Concentration
 
-    if (f == ode_model_concentration_with_sink):
-        t, pressure_array = improved_euler_pressure(ode_model_pressure_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, p0 = 50000, tmar = tmar, Pmar = Pmar,  pars = [-0.03466,100000])
+    if (f == ode_model_concentration_with_sink): # if scenario is with sink installed, call up pressure ode for sink scenario and solve
+        t, pressure_array = improved_euler_pressure(ode_model_pressure_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, p0 = 50000, tmar = tmar, Pmar = pars[6], pars = [-0.03466,100000])
     else:
-        t, pressure_array = improved_euler_pressure(ode_model_pressure_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, p0 = 50000, tmar = tmar, Pmar = Pmar, pars = [-0.03466,100000])
+        t, pressure_array = improved_euler_pressure(ode_model_pressure_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, p0 = 50000, tmar = tmar, Pmar = pars[6], pars = [-0.03466,100000])
 
     # Iterate over all values of t
     for i in range (steps):
@@ -163,18 +261,35 @@ def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, tmar, Pmar, pars):
     return t, c
 
 def improved_euler_pressure(f, t0, t1, dt, p0, tmar, Pmar, pars):
+    ''' Returns array of Pressure and Time solved using Improved Eulers Method
+
+        Parameters:
+        -----------
+        f: function to solve (pressure ode model)
+        t0: Starting year
+        t1: Ending year
+        dt: Step size (in years)
+        p0: surface pressure parameter in Pa
+        tmar: when MAR program is implemented (year)
+        Pmar: Pressure drop the MAR program produces in Pa
+        pars: b, Pa
+
+        Returns:
+        --------
+        t: Time array in years of step size dt
+        p: Pressure array in Pa solved for all points in time (t)    
+    ''' 
 	# initialise
     steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
     t = t0 + np.arange(steps+1) * dt			# t array
     p = 0.*t						        	# p array to store pressure
-    p[0] = 50000							    # Set initial value in Pa
+    p[0] = p0							        # Set initial value in Pa
     b = pars[0]
-    t, p_numerical = pressure_analytical(t0,t1,dt,b) # solves the pressure numerically
 
 	# Iterate over all values of t
     for i in range (steps):
-        f0 = f(t[i], p_numerical[i], tmar, Pmar, *pars)
-        f1 = f(t[i] + dt, p_numerical[i] + dt * f0, tmar, Pmar, *pars)
+        f0 = f(t[i], p[i], tmar, Pmar, *pars)
+        f1 = f(t[i] + dt, p[i] + dt * f0, tmar, Pmar, *pars)
 	    # Increment solution by step size x half of each derivative
         p[i+1] = p[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
 
@@ -219,15 +334,12 @@ def plot_pressure_model_mar():
     plt.show()
 
 def plot_concentration_model_sink():
-    #[ 4.54391383e-01  5.30450263e-02 -1.37058256e+03]
-    #[ 6.49474256e-01  8.70926035e-01 -3.12050719e+04]
-    #[ 6.50424868e-01  7.35181289e-01 -3.39986410e+04]
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 50000, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
     plt.plot(t, C)
     plt.show()
 
 def plot_concentration_model_mar():
-    t, C = improved_euler_concentration(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 50000, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    t, C = improved_euler_concentration(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
     plt.plot(t, C)
     plt.show()
 
@@ -235,7 +347,7 @@ def plot_concentration_model_with_curve_fit():
     year_stock, stock = stock_population()
     year_conc, concentration = nitrate_concentration()
     
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 50000, pars = [1e9, 5e4, 0.3, 0.0001, 0.0003, 1e5, 0, -0.03466])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 0.3, 0.0001, 0.0003, 1e5, 0, -0.03466])
     ci = np.interp(t, year_conc, concentration)
     
     cc,_ = curve_fit(fit_concentration, t, ci)
@@ -247,12 +359,9 @@ def plot_concentration_model_with_curve_fit():
     t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 50000, pars = [1e9, 50000,a, b,c , 100000, 0, -0.03466])
     plt.plot(t, C)
     plt.show()
-    #   [ 4.54391383e-01  5.30450263e-02 -1.37058256e+03]
-    #-0.18463230481350532
-    #0.01674194787021388
 
 def fit_concentration(t,a,b,c):
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 50000, pars = [1e9, 50000, a,b, c, 100000, 0, -0.03466])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 50000, a,b, c, 100000, 0, -0.03466])
     return C
 
 def plot_sink_and_given():
@@ -264,10 +373,7 @@ def plot_sink_and_given():
     ax1.set_xlabel("time [years]")
     ax1.set_ylabel("Concentration [mg/L]")
     conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
-    #t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, pars = [1e9, 50000, -0.18463230481350532,0.01674194787021388 ,30, 100000, 0, 0.003])
-    #t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, pars = [1e9, 5e4, 0.45, 0.053, -1370, 1e5, 0, 0.003])
-    #t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, pars = [1e10, 5e4, 0.65, 0.87, -40000, 1e5, 0, 0.03466])
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 50000, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
 
     plt.plot(t, C, color = 'black')
 
@@ -293,7 +399,7 @@ def plot_mar_and_given():
     ax1.set_ylabel("Concentration [mg/L]")
     conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
 
-    t, C = improved_euler_concentration(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 50000, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    t, C = improved_euler_concentration(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
 
     plt.plot(t, C, color = 'black')
 
