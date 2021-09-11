@@ -535,6 +535,45 @@ def plot_benchmark_concentration():
     plt.tight_layout()
     plt.show()
 
+#forecasting
+def extrapolate_stock_growth():
+
+    year, stock = stock_population()
+    append_years = np.arange(start= 2020.5,stop = 2029.5)
+    years_copy = year.copy()
+    years_copy = np.append(years_copy,2030.5)
+
+    #1.5 times population
+    stock1 = stock.copy()
+    stock1 = np.append(stock,954362)
+    n1 = np.interp(append_years, years_copy, stock1)
+    Rstock1 = np.append(stock,n1)
+    Rstock1 = np.append(Rstock1,954362)
+
+    y = np.append(year,append_years)
+    y = np.append(y,2030.5)
+
+    return Rstock1, y
+
+def extrapolate_stock_maintain():
+
+    year, stock = stock_population()
+    append_years = np.arange(start= 2020.5,stop = 2029.5)
+    years_copy = year.copy()
+    years_copy = np.append(years_copy,2030.5)
+
+    #Maintain population
+    stock2 = stock.copy()
+    stock2 = np.append(stock,640000)
+    n2 = np.interp(append_years, years_copy, stock2)
+    Rstock2 = np.append(stock,n2)
+    Rstock2 = np.append(Rstock2,640000)
+
+    y = np.append(year,append_years)
+    y = np.append(y,2030.5)
+    
+    return Rstock2, y
+
 if __name__ == "__main__":
     #ode_model_pressure()
     #ode_model_concentration()
