@@ -422,7 +422,6 @@ def plot_benchmark_pressure():
     
     P_Analytical = np.zeros(len(P_Numerical))
     P_Error = np.zeros(len(P_Numerical))
-    inverse_stepsize = np.linspace(1, 10, 11)
     inverse_stepsize = np.linspace(1, 11, 11)
     P_Convergence = np.zeros(len(inverse_stepsize))
 
@@ -480,7 +479,7 @@ def plot_benchmark_concentration():
     
     # Numerical solution                                                                                                                        t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, Pmar,b
     t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
-    #t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1, 0, 0.5 , 1, -1, 0, 0, -0.03466])
+    #t, C_Numerical = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1, 0, 1 , 1, -1, 0, 0, -1])
 
     C_Analytical = np.zeros(len(C_Numerical))
     C_Error = np.zeros(len(C_Numerical))
@@ -497,11 +496,11 @@ def plot_benchmark_concentration():
     #finding error between analytical and numerical solutions
     for i in range (len(C_Numerical)):
         if t[i]<2012:
-            g = stock_interpolation(t[i])*b1
+            g = stock_interpolation(t[i]) *b1
         else:
-            g = stock_interpolation(t[i])*b1 * a
+            g = stock_interpolation(t[i]) *b1 * a
         C_Analytical[i] = (math.exp((-k*math.exp(c-j*t[i]) + k*j)/(j*M)/k)) - (g/k)
-        #C_Analytical[i] = math.exp(-( math.exp((-2*t[i])/2) ) + c1) - g  
+        #C_Analytical[i] = math.exp(-math.exp(-t[i])) -g 
         C_Error[i] = abs(C_Analytical[i] - C_Numerical[i])
 
     #convergence
@@ -588,5 +587,5 @@ if __name__ == "__main__":
     #plot_concentration_model_with_curve_fit()
     #n = stock_interpolation(2000.96)
     #print(n)
-    #plot_benchmark_concentration()
+    plot_benchmark_concentration()
     plot_benchmark_pressure()
