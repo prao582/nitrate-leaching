@@ -423,6 +423,7 @@ def plot_benchmark_pressure():
     P_Analytical = np.zeros(len(P_Numerical))
     P_Error = np.zeros(len(P_Numerical))
     inverse_stepsize = np.linspace(1, 10, 11)
+    inverse_stepsize = np.linspace(1, 11, 11)
     P_Convergence = np.zeros(len(inverse_stepsize))
 
     for i in range (len(P_Numerical)):
@@ -440,6 +441,7 @@ def plot_benchmark_pressure():
     plt.title('Benchmark')
     plt.xlabel('t')
     plt.ylabel('P')
+
     
     plt.subplot(1,3,2)
     plt.plot(t,P_Error,'k-')
