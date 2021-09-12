@@ -90,7 +90,7 @@ def concentration_interpolation(t):
 ###################################################
 #analytically solves the pressure ode to find P
 def pressure_analytical(t0,t1,dt,b):
-    ''' Returns time and pressure solved numerically arrays
+    ''' Returns time and pressure solved anaylitcally arrays
 
         Parameters:
         -----------
@@ -294,6 +294,46 @@ def improved_euler_pressure(f, t0, t1, dt, p0, tmar, Pmar, pars):
         p[i+1] = p[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
 
     return t, p
+
+def improved_euler_concentration_no_sink_no_mar(f, t0, t1, dt, C0, tdelay, tmar, pars):
+    ''' Returns array of Concentration and Time solved using Improved Eulers Method
+
+        Parameters:
+        -----------
+        f: function to solve (concentration ode model)
+        t0: Starting year
+        t1: Ending year
+        dt: Step size (in years)
+        C0: Initial concentration
+        tdelay: time delay in years
+        tmar: when MAR program is implemented (year)
+        pars: M, P0, a, b1, bc, Pa, Pmar, b
+
+        Returns:
+        --------
+        t: Time array in years of step size dt
+        c: Concentration array solved for all points in time (t)
+    ''' 
+	# initialise
+    steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
+    t = t0 + np.arange(steps+1) * dt			# t array
+    c = 0. * t						        	# c array to store concentration
+    c[0] = C0							        # Set initial value of Concentration
+
+    t, pressure_array = improved_euler_pressure(ode_model_pressure_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, p0 = 50000, tmar = tmar, Pmar = pars[6], pars = [-0.03466,100000])
+  
+    # Iterate over all values of t
+    for i in range (steps):
+        P = pressure_array[i]
+        n = stock_interpolation(t[i]-tdelay)
+        f0 = f(t[i], c[i], n, P, tdelay, *pars)
+        f1 = f(t[i] + dt, c[i] + dt * f0, n, P, tdelay, *pars)
+	    # Increment solution by step size x half of each derivative
+        c[i+1] = c[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
+
+    return t, c
+
+
 ###################################################
 #PLOTTING
 def plot_given_data():
@@ -414,6 +454,69 @@ def plot_mar_and_given():
     plt.plot([2020,2020], [0,700000], color =  'black', linestyle = 'dashed')
     plt.legend([conc, stck], ["Concentration", "Stock numbers"])
     plt.show()
+
+def plot_no_sink_and_given():
+    year_stock, stock = stock_population()
+    year_conc, concentration = nitrate_concentration()
+
+    fig, ax1 = plt.subplots()
+    plt.title("Stock numbers and concentration against time")
+    ax1.set_xlabel("time [years]")
+    ax1.set_ylabel("Concentration [mg/L]")
+    conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
+
+
+    t, C = improved_euler_concentration_no_sink_no_mar(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+
+    plt.plot(t, C, color = 'black')
+
+    ax2 = ax1.twinx()
+    ax2.set_xlabel("time, [years]")
+    ax2.set_ylabel("Stock numbers")
+    stck = ax2.scatter(year_stock, stock, label = "Stock numbers", color = 'green')
+    fig.tight_layout()
+
+    
+    plt.annotate(xy=[2020,250000], s=' MAR introduced')
+    plt.plot([2020,2020], [0,700000], color =  'black', linestyle = 'dashed')
+    plt.legend([conc, stck], ["Concentration", "Stock numbers"])
+    plt.show()
+
+def plot_sink_and_no_sink_and_given():
+    year_stock, stock = stock_population()
+    year_conc, concentration = nitrate_concentration()
+
+    fig, ax1 = plt.subplots()
+    plt.title("Stock numbers and concentration against time")
+    ax1.set_xlabel("time [years]")
+    ax1.set_ylabel("Concentration [mg/L]")
+    conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
+
+    # plots with sink scenario
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    plt.plot(t, C, color = 'black')
+
+    # plots no sink scenario
+    t, C = improved_euler_concentration_no_sink_no_mar(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    plt.plot(t, C, color = 'red', linestyle = 'dashed')
+
+    
+
+    ax2 = ax1.twinx()
+    ax2.set_xlabel("time, [years]")
+    ax2.set_ylabel("Stock numbers")
+    stck = ax2.scatter(year_stock, stock, label = "Stock numbers", color = 'green')
+    fig.tight_layout()
+
+    
+    plt.annotate(xy=[2010,250000], s=' Sink introduced')
+    plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
+    plt.legend([conc, stck], ["Concentration", "Stock numbers"])
+    plt.show()
+
+
+
+
 
 ###################################################
 #BENCHMARKING
@@ -536,6 +639,7 @@ def plot_benchmark_concentration():
     plt.tight_layout()
     plt.show()
 
+###################################################
 #forecasting
 def extrapolate_stock_growth(t):
 
@@ -798,7 +902,7 @@ def plot_forecasting():
     ax.set(title = 'Concentration forecasting', xlabel = 'Time (years)', ylabel = 'Concentration')
     plt.show()
 
-
+###################################################
 #UNCERTAINITY
 def uncertainity():
     global cc, cov
@@ -841,7 +945,7 @@ if __name__ == "__main__":
     #stock_population()
     # plot_given_data()
     #plot_concentration_model_sink()
-    plot_concentration_model_mar()
+    #plot_concentration_model_mar()
     #plot_sink_and_given()
     #plot_mar_and_given()
     #plot_concentration_model_with_curve_fit()
@@ -849,5 +953,8 @@ if __name__ == "__main__":
     #print(n)
     #plot_benchmark_concentration()
     #plot_benchmark_pressure()
-    plot_forecasting()
+    #plot_forecasting()
     #uncertainity()
+    #plot_pressure_model_sink()
+    #plot_pressure_model_mar()
+    plot_sink_and_no_sink_and_given()
