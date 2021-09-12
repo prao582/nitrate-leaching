@@ -342,7 +342,6 @@ def improved_euler_concentration_no_sink_no_mar(f, t0, t1, dt, C0, tdelay, tmar,
 
     return t, c
 
-
 ###################################################
 #PLOTTING
 def plot_given_data():
@@ -523,10 +522,6 @@ def plot_sink_and_no_sink_and_given():
     plt.legend([conc, stck], ["Concentration", "Stock numbers"])
     plt.show()
 
-
-
-
-
 ###################################################
 #BENCHMARKING
 def plot_benchmark_pressure():
@@ -643,7 +638,7 @@ def extrapolate_stock_growth(t):
     years_copy = np.append(years_copy,2030.5)
 
     stock1 = stock.copy()
-    stock1 = np.append(stock,954362)
+    stock1 = np.append(stock,2e6)
 
     n1 = np.interp(t, years_copy, stock1)
     
@@ -898,13 +893,14 @@ def plot_forecasting():
     ax.plot(ts2, cs2, 'k', label = 'Scenario Two, Rejection of consent, so carbon sink and and increase stock number')
 
     #Acceptance of consent, so implement mar and maintain stock number
-    ts3,cs3 = improved_euler_concentration_maintain(ode_model_concentration_with_mar_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    ts3,cs3 = improved_euler_concentration_maintain(ode_model_concentration_with_mar_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, -5000, -0.03466])
     ax.plot(ts3, cs3, 'y', label = 'Scenario Three, Acceptance of consent, so implement mar and maintain stock number', linestyle = 'dashed')
 
     #Acceptance of consent, so implement mar and increase stock number
-    ts4,cs4 = improved_euler_concentration_growth(ode_model_concentration_with_mar_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    ts4,cs4 = improved_euler_concentration_growth(ode_model_concentration_with_mar_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, -5000, -0.03466])
     ax.plot(ts4, cs4, 'c', label = 'Scenario Four, Acceptance of consent, so implement mar and increase stock number', linestyle = 'dashed')
 
+    plt.plot([1980,2030], [13,13], label = 'Maximum Allowable Nitrate', color =  'black', linestyle = 'dashed')
     ax.legend()
     ax.set(title = 'Concentration forecasting', xlabel = 'Time (years)', ylabel = 'Concentration')
     plt.show()
@@ -960,8 +956,8 @@ if __name__ == "__main__":
     #print(n)
     #plot_benchmark_concentration()
     #plot_benchmark_pressure()
-    #plot_forecasting()
+    plot_forecasting()
     #uncertainity()
     #plot_pressure_model_sink()
     #plot_pressure_model_mar()
-    plot_sink_and_no_sink_and_given()
+    #plot_sink_and_no_sink_and_given()
