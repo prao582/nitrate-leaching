@@ -349,14 +349,14 @@ def plot_concentration_model_with_curve_fit():
     
     t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 0.3, 0.0001, 0.0003, 1e5, 0, -0.03466])
     ci = np.interp(t, year_conc, concentration)
-    
-    cc,_ = curve_fit(fit_concentration, t, ci)
+    global cc, cov
+    cc,cov = curve_fit(fit_concentration, t, ci)
     print(cc)
     a = cc[0]
     b = cc[1]
     c = cc[2]
     #                                                                                                                                    M, P0, a, b1, bc, Pa, Pmar, b
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, Pmar = 50000, pars = [1e9, 50000,a, b,c , 100000, 0, -0.03466])
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020,  pars = [1e9, 50000,a, b,c , 100000, 0, -0.03466])
     plt.plot(t, C)
     plt.show()
 
@@ -783,14 +783,50 @@ def plot_forecasting():
     ax.set(title = 'Concentration forecasting', xlabel = 'Time (years)', ylabel = 'Concentration')
     plt.show()
 
+
+#UNCERTAINITY
+def uncertainity():
+    global cc, cov
+    # genertate 500 samples of differnet parameter combinations of a,b,c
+    old = cc
+    cc = abs(cc)
+    cov = abs(cov)
+    pars = np.random.multivariate_normal(cc, cov, 100)
+    # for the extrapolation part
+    multi = []
+    f,ax = plt.subplots(1,1)
+    for par in pars:
+        a = par[0]
+        b = par[1]
+        c = par[2]
+        t_conc_model_sink, conc_sink = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, old[0], old[1], old[2], 1e5, 0, -0.03466])
+        t_conc_model_mar, conc_mar = improved_euler_concentration(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, old[0], old[1], old[2], 1e5, 0, -0.03466])        
+        ts1,cs1 = improved_euler_concentration_maintain(ode_model_concentration_with_sink_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, a , b, c, 1e5, 0, -0.03466])
+        ax.plot(ts1, cs1, 'm', alpha = 0.2, lw = 0.4)
+
+    #Rejection of consent, so carbon sink and and increase stock number
+        ts2,cs2 = improved_euler_concentration_growth(ode_model_concentration_with_sink_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, a , b, c, 1e5, 0, -0.03466])
+        ax.plot(ts2, cs2, 'k')
+
+    #Acceptance of consent, so implement mar and maintain stock number
+        ts3,cs3 = improved_euler_concentration_maintain(ode_model_concentration_with_mar_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, a,b,c, 1e5, 0, -0.03466])
+        ax.plot(ts3, cs3, 'y')
+
+    #Acceptance of consent, so implement mar and increase stock number
+        #ts4,cs4 = improved_euler_concentration_growth(ode_model_concentration_with_mar_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, a,b,c, 1e5, 0, -0.03466])
+        #ax.plot(ts4, cs4, 'c')
+
+    plt.show()
+
+    return None
     
 if __name__ == "__main__":
     #ode_model_pressure()
     #ode_model_concentration()
     #stock_population()
     # plot_given_data()
-    # plot_concentration_model_sink()
-    # plot_concentration_model_mar()
+    #plot_concentration_model_sink()
+    plot_concentration_model_mar()
     #plot_sink_and_given()
     #plot_mar_and_given()
     #plot_concentration_model_with_curve_fit()
@@ -799,3 +835,4 @@ if __name__ == "__main__":
     #plot_benchmark_concentration()
     #plot_benchmark_pressure()
     plot_forecasting()
+    #uncertainity()
