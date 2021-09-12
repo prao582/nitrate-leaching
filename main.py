@@ -468,8 +468,8 @@ def plot_no_sink_and_given():
     year_conc, concentration = nitrate_concentration()
 
     fig, ax1 = plt.subplots()
-    plt.title("Stock numbers and concentration against time")
-    ax1.set_xlabel("time [years]")
+    plt.title("Stock numbers and Concentration against time")
+    ax1.set_xlabel("Time [years]")
     ax1.set_ylabel("Concentration [mg/L]")
     conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
 
@@ -479,14 +479,12 @@ def plot_no_sink_and_given():
     plt.plot(t, C, color = 'black')
 
     ax2 = ax1.twinx()
-    ax2.set_xlabel("time, [years]")
     ax2.set_ylabel("Stock numbers")
-    stck = ax2.scatter(year_stock, stock, label = "Stock numbers", color = 'green')
+    stck = ax2.scatter(year_stock, stock, label = "Stock Numbers", color = 'green')
     fig.tight_layout()
 
-    
-    plt.annotate(xy=[2020,250000], s=' MAR introduced')
-    plt.plot([2020,2020], [0,700000], color =  'black', linestyle = 'dashed')
+    plt.annotate(xy=[2020,250000], s='Sink introduced')
+    plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
     plt.legend([conc, stck], ["Concentration", "Stock numbers"])
     plt.show()
 
@@ -754,7 +752,6 @@ def ode_model_concentration_with_mar_stock_growth(t, C, n, P, tdelay, M, P0, a, 
         dCdt = (n * a * b1 * (P-P0)) + (bc * (P - 0.5*(Pa+Pmar)) * C)
         return dCdt / M
 
-
 def ode_model_concentration_with_mar_stock_maintain(t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, Pmar, b):
     ''' Returns dCdt using the pressure ode provided for the MAR scenario
 
@@ -872,49 +869,67 @@ def improved_euler_concentration_maintain(f, t0, t1, dt, C0, tdelay, tmar, pars)
     return t, c
 
 def plot_forecasting():
-    #give data and concentration models
+
+    # Set up title and axis labels
+    f,ax = plt.subplots(1,1)
+    plt.title("Nitrate Leaching in Southland LPM: what-if scenarios")
+    ax.set_xlabel("Time [years]")
+    ax.set_ylabel("Concentration [mg/L]")
+
+    #get data and concentration models
     t_conc,conc = nitrate_concentration()
+    year_stock, stock = stock_population()
     t_conc_model_sink, conc_sink = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
     t_conc_model_mar, conc_mar = improved_euler_concentration(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
 
-    figure,ax = plt.subplots(1,1)
     ax.plot(t_conc, conc, 'r',marker = '.',linestyle = 'None', label = 'Concentration data')
-    ax.plot(t_conc_model_sink, conc_sink, 'g', label = 'Conc model sink')
-    ax.plot(t_conc_model_mar, conc_mar, 'b', label = 'Conc model mar')
-    
+    ax.plot(t_conc_model_sink, conc_sink, 'b', label = 'Concentration Model Sink')
+    plt.plot([1980,2030], [13,13], label = 'Maximum Allowable Nitrate [mg/L]', color =  'black', linestyle = 'dashed')
+    ax.scatter([], [], label = "Stock Numbers", color = 'green')
+
     #what-if scenarios
     
-    #Rejection of consent, no mar and maintain stock number
+    # Rejection of consent, no mar and maintain stock number
     ts1,cs1 = improved_euler_concentration_maintain(ode_model_concentration_with_sink_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
-    ax.plot(ts1, cs1, 'm', label = 'Scenario One, Rejection of consent, so carbon sink and maintaining stock number')
+    ax.plot(ts1, cs1, color = 'coral', label = 'Scenario One, rejection of consent, maintaining stock number', linewidth = 2)
 
-    #Rejection of consent, no mar and increase stock number
+    #Rejection of consent, no mar and double stock number
     ts2,cs2 = improved_euler_concentration_growth(ode_model_concentration_with_sink_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
-    ax.plot(ts2, cs2, 'k', label = 'Scenario Two, Rejection of consent, so carbon sink and and increase stock number')
+    ax.plot(ts2, cs2, 'cyan', label = 'Scenario Two, rejection of consent, double stock number', linewidth =2)
 
     #Acceptance of consent, so implement mar and maintain stock number
     ts3,cs3 = improved_euler_concentration_maintain(ode_model_concentration_with_mar_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, -5000, -0.03466])
-    ax.plot(ts3, cs3, 'y', label = 'Scenario Three, Acceptance of consent, so implement mar and maintain stock number', linestyle = 'dashed')
+    ax.plot(ts3, cs3, 'purple', label = 'Scenario Three, acceptance of consent, implement mar and maintain stock number', linewidth = 2)
 
-    #Acceptance of consent, so implement mar and increase stock number
+    #Acceptance of consent, so implement mar and double stock number
     ts4,cs4 = improved_euler_concentration_growth(ode_model_concentration_with_mar_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, -5000, -0.03466])
-    ax.plot(ts4, cs4, 'c', label = 'Scenario Four, Acceptance of consent, so implement mar and increase stock number', linestyle = 'dashed')
+    ax.plot(ts4, cs4, 'green', label = 'Scenario Four, acceptance of consent, implement mar and double stock number', linewidth = 2)
 
-    plt.plot([1980,2030], [13,13], label = 'Maximum Allowable Nitrate', color =  'black', linestyle = 'dashed')
+    # Plot stock numbers on dual axis
+    ax2 = ax.twinx()
+    ax2.set_ylabel("Stock Numbers")
+    ax2.scatter(year_stock, stock, marker = '.',linestyle = 'None',color = 'green')
+    f.tight_layout()
     ax.legend()
-    ax.set(title = 'Concentration forecasting', xlabel = 'Time (years)', ylabel = 'Concentration')
     plt.show()
 
 ###################################################
 #UNCERTAINITY
 def uncertainity():
-    lines = 5
+
+    lines = 20
     var = 10
+
+    # Curve fit parameters
     a = 6.50424612e-01
     b = 7.42921705e-01
     c = -3.43565993e+04
+
+    # Test with 10% variance
     a_var = a/var
     b_var = b/var
+
+    # Set up title and axis labels
     f,ax = plt.subplots(1,1)
     plt.title("Nitrate Leaching in Southland LPM: Scenario Forecasts")
     ax.set_xlabel("Time [years]")
@@ -924,26 +939,27 @@ def uncertainity():
     a_norm = np.random.normal(a, a_var, lines)
     b_norm = np.random.normal(b, b_var, lines)
 
-    #give data and concentration models
+    #get data and concentration models
     t_conc,conc = nitrate_concentration()
     year_stock, stock = stock_population()
     t_conc_model_sink, conc_sink = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
     t_conc_model_mar, conc_mar = improved_euler_concentration(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, -5000, -0.03466])
-    
+
     # error variance
     v = 1.
     ax.errorbar(t_conc, conc, yerr=v, fmt='ro')    
     ax.plot(t_conc, conc, 'r',marker = '.',linestyle = 'None', label = 'Concentration data')
+    plt.plot([1980,2030], [13,13], label = 'Maximum Allowable Nitrate [mg/L]', color =  'black', linestyle = 'dashed')
     ax.scatter([], [], label = "Stock Numbers", color = 'green')
-    ax.plot(t_conc_model_sink, conc_sink, 'b', label = 'Concentration Model Sink')
-   
+    ax.plot(t_conc_model_sink, conc_sink, 'b', label = 'Best-fit Model')
+
     # Original data modelled with uncertainty
     for i in range(lines):
         pars_C = [a_norm[i], b_norm[i]]
         t_conc_model_sink1, conc_sink1 = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, *pars_C, -3.39986410e+04, 1e5, 0, -0.03466])
         plt.plot(t_conc_model_sink1, conc_sink1, alpha = 0.2, color = 'b')
 
-    #what-if scenario 1
+    # what-if scenario 1
     for i in range(lines):
         pars_C = [a_norm[i], b_norm[i]]
         ts1,cs1 = improved_euler_concentration_maintain(ode_model_concentration_with_sink_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, *pars_C, -3.39986410e+04, 1e5, 0, -0.03466])
@@ -952,7 +968,7 @@ def uncertainity():
     ts1,cs1 = improved_euler_concentration_maintain(ode_model_concentration_with_sink_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
     ax.plot(ts1, cs1, color = 'coral', label = 'Scenario One, rejection of consent, maintaining stock number', linewidth = 2)
 
-    #what-if scenario 2
+    # what-if scenario 2
     for i in range(lines):
         pars_C = [a_norm[i], b_norm[i]]
         ts2,cs2 = improved_euler_concentration_growth(ode_model_concentration_with_sink_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, *pars_C, -3.39986410e+04, 1e5, 0, -0.03466])
@@ -961,7 +977,7 @@ def uncertainity():
     ts2,cs2 = improved_euler_concentration_growth(ode_model_concentration_with_sink_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
     ax.plot(ts2, cs2, 'cyan', label = 'Scenario Two, rejection of consent, double stock number', linewidth =2)
 
-    #what-if scenario 3
+    # what-if scenario 3
     for i in range(lines):
         pars_C = [a_norm[i], b_norm[i]]
         ts3,cs3 = improved_euler_concentration_maintain(ode_model_concentration_with_mar_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, *pars_C, -3.39986410e+04, 1e5, -5000, -0.03466])
@@ -970,7 +986,7 @@ def uncertainity():
     ts3,cs3 = improved_euler_concentration_maintain(ode_model_concentration_with_mar_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, -5000, -0.03466])
     ax.plot(ts3, cs3, 'purple', label = 'Scenario Three, acceptance of consent, implement mar and maintain stock number', linewidth = 2)
 
-    #what-if scenario 4
+    # what-if scenario 4
     for i in range(lines):
         pars_C = [a_norm[i], b_norm[i]]
         ts4,cs4 = improved_euler_concentration_growth(ode_model_concentration_with_mar_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, *pars_C, -3.39986410e+04, 1e5, -5000, -0.03466])
@@ -979,16 +995,13 @@ def uncertainity():
     ts4,cs4 = improved_euler_concentration_growth(ode_model_concentration_with_mar_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, -5000, -0.03466])
     ax.plot(ts4, cs4, 'green', label = 'Scenario Four, acceptance of consent, implement mar and double stock number', linewidth = 2)
 
+    # Plot stock numbers on dual axis
     ax2 = ax.twinx()
-    ax2.set_xlabel("time, [years]")
     ax2.set_ylabel("Stock numbers")
-    ax2.scatter(year_stock, stock, color = 'green')
-    
+    ax2.scatter(year_stock, stock, marker = '.',linestyle = 'None',color = 'green')
     f.tight_layout()
     ax.legend()
-
     plt.show()
-
 
 def plot_concentration_misfit():
     year_conc = np.genfromtxt("nl_n.csv", delimiter = ',', skip_header = 1, usecols = 0)
@@ -1001,11 +1014,7 @@ def plot_concentration_misfit():
     plt.ylabel("Concentration (mg/L)")
     plt.xlabel('Time (years)')
     plt.show()
-
-
-   
-   # ax.plot(t_conc_model_mar, conc_mar, 'b', label = 'Conc model mar')
-    
+ 
 if __name__ == "__main__":
     #plot_concentration_model_sink()
     #plot_concentration_model_mar()
@@ -1015,8 +1024,9 @@ if __name__ == "__main__":
     #plot_benchmark_concentration()
     #plot_benchmark_pressure()
     #plot_forecasting()
-    uncertainity()
+    #uncertainity()
     #plot_pressure_model_sink()
     #plot_pressure_model_mar()
     #plot_sink_and_no_sink_and_given()
     #plot_concentration_misfit()
+    plot_no_sink_and_given()
