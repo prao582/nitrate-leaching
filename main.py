@@ -191,7 +191,6 @@ def ode_model_concentration_with_mar(t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, P
         dCdt: Concentration derivative solved for a point in time (t)
     '''  
     n = stock_interpolation(t-tdelay)
-    n = stock_interpolation(t-tdelay)
     if (t<2012): # 2012 takes into account the 2 year delay after 2010 when the sink is installed
         dCdt = (n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
         return dCdt / M        
@@ -202,8 +201,6 @@ def ode_model_concentration_with_mar(t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, P
         dCdt = (n * a * b1 * (P-P0)) + (bc * (P - 0.5*(Pa+Pmar)) * C)
         return dCdt /M
     
-    return dCdt / M
-
 def ode_model_pressure_with_mar(t, P, tmar, Pmar, b, Pa):
     ''' Returns dPdt using the pressure ode provided for the MAR scenario
 
@@ -226,6 +223,11 @@ def ode_model_pressure_with_mar(t, P, tmar, Pmar, b, Pa):
         dPdt = -b * (P + (Pa/2)) - (b * (P - ((Pa+Pmar)/2)))
         return dPdt
  
+def ode_model_concentration_no_sink_no_mar(t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, Pmar, b):
+    n = stock_interpolation(t-tdelay)
+    dCdt = (n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+    return dCdt / M 
+
 ###################################################
 #ODE SOLVERS
 def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, tmar, pars):
@@ -417,8 +419,32 @@ def plot_sink_and_given():
     year_conc, concentration = nitrate_concentration()
 
     fig, ax1 = plt.subplots()
-    plt.title("Stock numbers and concentration against time")
-    ax1.set_xlabel("time [years]")
+    plt.title("Best Fit LPM Model")
+    ax1.set_xlabel("Time [years]")
+    ax1.set_ylabel("Concentration [mg/L]")
+    conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [3e10, 5e4, 0.65, 0.87, -40000, 1e5, 0, -0.03466])
+
+    plt.plot(t, C, color = 'black')
+
+    ax2 = ax1.twinx()
+    ax2.set_ylabel("Stock numbers")
+    stck = ax2.scatter(year_stock, stock, label = "Stock numbers", color = 'green')
+    fig.tight_layout()
+
+    
+    plt.annotate(xy=[2011,250000], s='Sink introduced')
+    plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
+    plt.legend([conc, stck], ["Concentration", "Stock numbers"])
+    plt.show()
+
+def plot_sink_and_given_improved():
+    year_stock, stock = stock_population()
+    year_conc, concentration = nitrate_concentration()
+
+    fig, ax1 = plt.subplots()
+    plt.title("Best Fit LPM Model")
+    ax1.set_xlabel("Time [years]")
     ax1.set_ylabel("Concentration [mg/L]")
     conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
     t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
@@ -426,13 +452,12 @@ def plot_sink_and_given():
     plt.plot(t, C, color = 'black')
 
     ax2 = ax1.twinx()
-    ax2.set_xlabel("time, [years]")
     ax2.set_ylabel("Stock numbers")
     stck = ax2.scatter(year_stock, stock, label = "Stock numbers", color = 'green')
     fig.tight_layout()
 
     
-    plt.annotate(xy=[2010,250000], s=' Sink introduced')
+    plt.annotate(xy=[2011,250000], s='Sink introduced')
     plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
     plt.legend([conc, stck], ["Concentration", "Stock numbers"])
     plt.show()
@@ -468,22 +493,22 @@ def plot_no_sink_and_given():
     year_conc, concentration = nitrate_concentration()
 
     fig, ax1 = plt.subplots()
-    plt.title("Stock numbers and Concentration against time")
+    plt.title("No Sink Implemented")
     ax1.set_xlabel("Time [years]")
     ax1.set_ylabel("Concentration [mg/L]")
     conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
 
 
-    t, C = improved_euler_concentration_no_sink_no_mar(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    t, C = improved_euler_concentration_no_sink_no_mar(ode_model_concentration_no_sink_no_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
 
     plt.plot(t, C, color = 'black')
 
     ax2 = ax1.twinx()
-    ax2.set_ylabel("Stock numbers")
+    ax2.set_ylabel("Stock Numbers")
     stck = ax2.scatter(year_stock, stock, label = "Stock Numbers", color = 'green')
     fig.tight_layout()
 
-    plt.annotate(xy=[2020,250000], s='Sink introduced')
+    plt.annotate(xy=[2011,250000], s='Sink introduced')
     plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
     plt.legend([conc, stck], ["Concentration", "Stock numbers"])
     plt.show()
@@ -493,31 +518,30 @@ def plot_sink_and_no_sink_and_given():
     year_conc, concentration = nitrate_concentration()
 
     fig, ax1 = plt.subplots()
-    plt.title("Stock numbers and concentration against time")
-    ax1.set_xlabel("time [years]")
+    plt.title("Effectiveness of Carbon Sink Installation")
+    ax1.set_xlabel("Time [years]")
     ax1.set_ylabel("Concentration [mg/L]")
     conc = ax1.scatter(year_conc, concentration, label = "Concentration", color = 'red')
+    conc = ax1.scatter([],[], label = "Stock Numbers", color = 'green')
+    plt.plot([1980,2030], [13,13], label = 'Maximum Allowable Nitrate [mg/L]', color =  'green', linestyle = 'dashed')
 
     # plots with sink scenario
     t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
-    plt.plot(t, C, color = 'black')
+    plt.plot(t, C, color = 'black', label = 'Carbon Sink Installed')
 
     # plots no sink scenario
-    t, C = improved_euler_concentration_no_sink_no_mar(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
-    plt.plot(t, C, color = 'red', linestyle = 'dashed')
-
-    
+    t, C = improved_euler_concentration_no_sink_no_mar(ode_model_concentration_no_sink_no_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    plt.plot(t, C, color = 'red', linestyle = 'dashed', label = 'Carbon Sink Not Installed')
 
     ax2 = ax1.twinx()
-    ax2.set_xlabel("time, [years]")
     ax2.set_ylabel("Stock numbers")
-    stck = ax2.scatter(year_stock, stock, label = "Stock numbers", color = 'green')
+    stck = ax2.scatter(year_stock, stock, color = 'green')
     fig.tight_layout()
 
-    
+
     plt.annotate(xy=[2010,250000], s=' Sink introduced')
     plt.plot([2010,2010], [0,700000], color =  'black', linestyle = 'dashed')
-    plt.legend([conc, stck], ["Concentration", "Stock numbers"])
+    ax1.legend()
     plt.show()
 
 ###################################################
@@ -594,7 +618,6 @@ def plot_benchmark_concentration():
     c1 = 0
     h = 2
     
-    
     #finding error between analytical and numerical solutions
     for i in range (len(C_Numerical)):
         if t[i]<2012:
@@ -615,7 +638,7 @@ def plot_benchmark_concentration():
     plt.plot(t,C_Analytical,'rx',label = 'Analytical')
     plt.title('Concentration Numerical vs Analytical Benchmark')
     plt.xlabel('Time (Years)')
-    plt.ylabel('Concentraion (mg/L)')
+    plt.ylabel('Concentration (mg/L)')
     plt.legend()
     plt.show()
     
@@ -914,7 +937,7 @@ def plot_forecasting():
     plt.show()
 
 ###################################################
-#UNCERTAINITY
+#UNCERTAINTY
 def uncertainity():
 
     lines = 20
@@ -1003,30 +1026,44 @@ def uncertainity():
     ax.legend()
     plt.show()
 
-def plot_concentration_misfit():
+def plot_concentration_misfit_improved():
+
+    # Improved Model misfit
     year_conc = np.genfromtxt("nl_n.csv", delimiter = ',', skip_header = 1, usecols = 0)
     concentration = np.genfromtxt('nl_n.csv', delimiter = ',', skip_header = 1, usecols = 1)
-    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    t, C = improved_euler_concentration_no_sink_no_mar(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
     concentration_misfit = concentration - np.interp(year_conc, t, C)
     plt.plot(year_conc, concentration_misfit, 'rx')
     plt.plot(t, np.zeros(len(t)), 'k.')
-    plt.title("Concentration Misfit")
-    plt.ylabel("Concentration (mg/L)")
-    plt.xlabel('Time (years)')
+    plt.title("Best Fit LPM Model")
+    plt.ylabel("Concentration [mg/L]")
+    plt.xlabel('Time [years]')
+    plt.show()
+
+
+def plot_concentration_misfit_unimproved():
+
+  # Unimproved Model Misfit
+    year_conc = np.genfromtxt("nl_n.csv", delimiter = ',', skip_header = 1, usecols = 0)
+    concentration = np.genfromtxt('nl_n.csv', delimiter = ',', skip_header = 1, usecols = 1)
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [3e10, 5e4, 0.65, 0.87, -40000, 1e5, 0, -0.03466])
+    concentration_misfit = concentration - np.interp(year_conc, t, C)
+    plt.plot(year_conc, concentration_misfit, 'rx')
+    plt.plot(t, np.zeros(len(t)), 'k.')
+    plt.title("Best Fit LPM Model")
+    plt.ylabel("Concentration [mg/L]")
+    plt.xlabel('Time [years]')
     plt.show()
  
 if __name__ == "__main__":
-    #plot_concentration_model_sink()
-    #plot_concentration_model_mar()
-    #plot_sink_and_given()
-    #plot_mar_and_given()
-    #plot_concentration_model_with_curve_fit()
-    #plot_benchmark_concentration()
-    #plot_benchmark_pressure()
-    #plot_forecasting()
-    #uncertainity()
-    #plot_pressure_model_sink()
-    #plot_pressure_model_mar()
-    #plot_sink_and_no_sink_and_given()
-    #plot_concentration_misfit()
-    plot_no_sink_and_given()
+
+    plot_benchmark_pressure()
+    plot_benchmark_concentration()
+    plot_sink_and_given()
+    plot_concentration_misfit_unimproved()
+    plot_sink_and_given_improved()
+    plot_concentration_misfit_improved()
+    plot_sink_and_no_sink_and_given()
+    plot_concentration_model_with_curve_fit()
+    plot_forecasting()
+    uncertainity()
