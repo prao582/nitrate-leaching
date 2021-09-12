@@ -929,8 +929,10 @@ def uncertainity():
     t_conc_model_sink, conc_sink = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
     t_conc_model_mar, conc_mar = improved_euler_concentration(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, -5000, -0.03466])
 
+    # error variance
+    v = 1.
     figure,ax = plt.subplots(1,1)
-    ax.plot(t_conc, conc, 'r',marker = '.',linestyle = 'None', label = 'Concentration data')
+    ax.errorbar(t_conc, conc, yerr=v, fmt='ro', label = 'data')    
     ax.plot(t_conc_model_sink, conc_sink, 'b', label = 'Conc model sink')
    # ax.plot(t_conc_model_mar, conc_mar, 'b', label = 'Conc model mar')
     
@@ -1075,8 +1077,8 @@ if __name__ == "__main__":
     #plot_benchmark_pressure()
     #plot_forecasting()
     #uncertainty_pranav()
-    #uncertainity()
+    uncertainity()
     #plot_pressure_model_sink()
     #plot_pressure_model_mar()
     #plot_sink_and_no_sink_and_given()
-    plot_concentration_misfit()
+    #plot_concentration_misfit()
