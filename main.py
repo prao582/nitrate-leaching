@@ -1002,6 +1002,21 @@ def uncertainty_pranav():
     ax.legend()
     ax.set(title = 'Concentration forecasting', xlabel = 'Time (years)', ylabel = 'Concentration')
     plt.show()
+
+
+
+
+def plot_concentration_misfit():
+    year_conc = np.genfromtxt("nl_n.csv", delimiter = ',', skip_header = 1, usecols = 0)
+    concentration = np.genfromtxt('nl_n.csv', delimiter = ',', skip_header = 1, usecols = 1)
+    t, C = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    concentration_misfit = concentration - np.interp(year_conc, t, C)
+    plt.plot(t, concentration_misfit, 'rx')
+    plt.plot(t, np.zeros(len(t)), 'k.')
+    plt.set_title("Concentration Misfit")
+    plt.set_ylabel("conc (mg /L)")
+    plt.set_xlabel('time (t)')
+    plt.show()
     
 if __name__ == "__main__":
     #ode_model_pressure()
@@ -1018,8 +1033,9 @@ if __name__ == "__main__":
     #plot_benchmark_concentration()
     #plot_benchmark_pressure()
     #plot_forecasting()
-    uncertainty_pranav()
+    #uncertainty_pranav()
     #uncertainity()
     #plot_pressure_model_sink()
     #plot_pressure_model_mar()
     #plot_sink_and_no_sink_and_given()
+    plot_concentration_misfit()
