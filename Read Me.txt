@@ -1,0 +1,24 @@
+Nitrate leaching into Southland aquifers Forecast Predictions
+
+In today’s modern society, New Zealand’s primary export industry is dominated by dairy, beef, and sheep farming. With intense dairy farming, the rate of surface nitrate release from fertilisers and cow pee can overwhelm the microbes and leach into massive volumes of porous rock known as groundwater aquifers. Increasing nitrate concentrations has many environmental impacts where Dairy NZ is looking to implement a Managed Aquifer recharge program (MAR) with varying levels of cattle stock to reduce the nitrate concentration. However, there are concerns with the rising level of cattle stock as there are now 20 times more dairy cattle than there were 30 years ago. If the cattle rises, this can cause drastic effects on the healthy ecosystem. In addition, if the nitrate concentrations get too high (exceeding 13mg/L), it could prove dangerous for the drinking water from those aquifers.
+
+This project has been designed in order to see the effects of the cattle stock population being performed on pressure and nitrate concentration and create an LPM for each of the two. It then extrapolates these results into 30 years in the future along with three other potential scenarios with regards to the population of cattle stock taking into account uncertainty in the data. This will provide insight as to the potential impact of each of the four injection rates on groundwater loss and the ecosystem around the Southland aquifers.
+
+
+What the project contains
+
+Within the project there are
+
+- “main.py” – Contains the bulk of the functions including our concentration specific functions, pressure specific functions, functions for plotting, convergence test and benchmarking functions, forecasting function, and uncertainty function
+- “test.py” – Contains the units tests and edge cases for the functions
+- “nl_cows.txt” – Data of time (year) and stock numbers
+- “nl_n.csv” – Data of time (year) and nitrate concentration (g/L)
+
+How to Use this Project
+
+1. Install Python and the environment as outlined in the ENGSCI 233 how-to guide literature
+2. Ensure the Numpy, Matplotlib and Scipy packages are all installed using the following command line:
+Python -m pip install –user numpy scipy matplotlib
+3. Install all the required project files listed above to a single source folder
+4. Open and run main.py
+5. All relevant figures and information will be shown in a source folder
