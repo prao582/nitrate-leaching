@@ -8,7 +8,7 @@ from numpy.testing._private.utils import break_cycles
 import scipy as scipy
 from scipy.optimize import curve_fit
 ###################################################
-#read in functions
+# Read in functions
 def stock_population():
     ''' Returns year and stock population from data
 
@@ -48,7 +48,7 @@ def nitrate_concentration():
 
     return year_conc, concentration
 ###################################################
-#interpolation functions
+# Interpolation functions
 def stock_interpolation(t):
     ''' Return stock parameter n for model
 
@@ -88,7 +88,7 @@ def concentration_interpolation(t):
 
     return n    
 ###################################################
-#analytically solves the pressure ode to find P
+# Analytically solves the pressure ode to find P
 def pressure_analytical(t0,t1,dt,b):
     ''' Returns time and pressure solved anaylitcally arrays
 
@@ -115,7 +115,7 @@ def pressure_analytical(t0,t1,dt,b):
         p[i] = math.exp(-2*b*t[i]-126.4233635)
     return t, p
 ###################################################
-#ODE MODELS
+# ODE MODELS
 def ode_model_pressure_with_sink(t, P, tmar, Pmar, b, Pa):
     ''' Returns dPdt using the pressure ode provided for the carbon sink scenario
 
@@ -229,7 +229,7 @@ def ode_model_concentration_no_sink_no_mar(t, C, n, P, tdelay, M, P0, a, b1, bc,
     return dCdt / M 
 
 ###################################################
-#ODE SOLVERS
+# ODE SOLVERS
 def improved_euler_concentration(f, t0, t1, dt, C0, tdelay, tmar, pars):
     ''' Returns array of Concentration and Time solved using Improved Eulers Method
 
@@ -345,7 +345,7 @@ def improved_euler_concentration_no_sink_no_mar(f, t0, t1, dt, C0, tdelay, tmar,
     return t, c
 
 ###################################################
-#PLOTTING
+# PLOTTING
 def plot_given_data():
     year_stock, stock = stock_population()
     year_conc, concentration = nitrate_concentration()
@@ -545,7 +545,7 @@ def plot_sink_and_no_sink_and_given():
     plt.show()
 
 ###################################################
-#BENCHMARKING
+# BENCHMARKING
 def plot_benchmark_pressure():
     t, P_Numerical = improved_euler_pressure(ode_model_pressure_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, p0 = 50000, tmar = 2020, Pmar = 50000, pars = [-0.03466,100000])
     
@@ -650,7 +650,8 @@ def plot_benchmark_concentration():
     plt.show()
 
 ###################################################
-#forecasting
+# Forecasting
+
 def extrapolate_stock_growth(t):
 
     year, stock = stock_population()
@@ -937,7 +938,7 @@ def plot_forecasting():
     plt.show()
 
 ###################################################
-#UNCERTAINTY
+# UNCERTAINTY & MISFIT
 def uncertainity():
 
     lines = 20
@@ -1039,7 +1040,6 @@ def plot_concentration_misfit_improved():
     plt.ylabel("Concentration [mg/L]")
     plt.xlabel('Time [years]')
     plt.show()
-
 
 def plot_concentration_misfit_unimproved():
 
