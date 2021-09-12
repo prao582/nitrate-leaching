@@ -9,8 +9,8 @@ What the project contains
 
 Within the project there are
 
-- Contains the bulk of the functions including our concentration specific functions, pressure specific functions, functions for plotting, convergence test and benchmarking functions, forecasting function, and uncertainty function
-- Contains the units tests and edge cases for the functions
+- "main.py" - Contains the bulk of the functions including our concentration specific functions, pressure specific functions, functions for plotting, convergence test and benchmarking functions, forecasting function, and uncertainty function
+- "test.py" - Contains the units tests and edge cases for the functions
 - "nl_cows.txt" - Data of time (year) and stock numbers
 - "nl_n.csv" - Data of time (year) and nitrate concentration (g/L)
 
