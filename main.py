@@ -813,10 +813,4 @@ if __name__ == "__main__":
     #print(n)
     #plot_benchmark_concentration()
     #plot_benchmark_pressure()
-<<<<<<< HEAD
-    #print(extrapolate_stock_maintain(2026))
-    #plot_concentration_model_sink()
-    #plot_concentration_model_mar()
     plot_forecasting()
-=======
->>>>>>> 3ea8611c20f190b86f6fe83f710a34674b4192f0
