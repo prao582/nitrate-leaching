@@ -908,39 +908,30 @@ def plot_forecasting():
 ###################################################
 #UNCERTAINITY
 def uncertainity():
+    lines = 100
+    var = 10
     global cc, cov
-    # genertate 500 samples of differnet parameter combinations of a,b,c
-    old = cc
-    cc = abs(cc)
-    cov = abs(cov)
-    pars = np.random.multivariate_normal(cc, cov, 100)
-    # for the extrapolation part
-    multi = []
+ #[ 6.50424612e-01  7.42921705e-01 -3.43565993e+04]
+    a = 6.50424612e-01
+    b = 7.42921705e-01
+    c = 3.43565993e+04
+    a_var = a/var
+    b_var = b/var
+    c_var = c/var
     f,ax = plt.subplots(1,1)
-    for par in pars:
-        a = par[0]
-        b = par[1]
-        c = par[2]
-        t_conc_model_sink, conc_sink = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, old[0], old[1], old[2], 1e5, 0, -0.03466])
-        t_conc_model_mar, conc_mar = improved_euler_concentration(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, old[0], old[1], old[2], 1e5, 0, -0.03466])        
-        ts1,cs1 = improved_euler_concentration_maintain(ode_model_concentration_with_sink_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, a , b, c, 1e5, 0, -0.03466])
-        ax.plot(ts1, cs1, 'm', alpha = 0.2, lw = 0.4)
+    #generate the nomral distribution for parameters
+    a_norm = np.random.normal(a, a_var, lines)
+    b_norm = np.random.normal(b, b_var, lines)
+    c_norm = np.random.normal(c, c_var, lines)
 
-    #Rejection of consent, so carbon sink and and increase stock number
-        ts2,cs2 = improved_euler_concentration_growth(ode_model_concentration_with_sink_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, a , b, c, 1e5, 0, -0.03466])
-        ax.plot(ts2, cs2, 'k')
-
-    #Acceptance of consent, so implement mar and maintain stock number
-        ts3,cs3 = improved_euler_concentration_maintain(ode_model_concentration_with_mar_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, a,b,c, 1e5, 0, -0.03466])
-        ax.plot(ts3, cs3, 'y')
-
-    #Acceptance of consent, so implement mar and increase stock number
-        #ts4,cs4 = improved_euler_concentration_growth(ode_model_concentration_with_mar_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, a,b,c, 1e5, 0, -0.03466])
-        #ax.plot(ts4, cs4, 'c')
+    for i in range(lines):
+        pars_C = [a_norm[i], b_norm[i], c_norm[i]]
+        #Rejection of consent, so carbon sink and and increase stock number
+        t, C = improved_euler_concentration_no_sink_no_mar(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, *pars_C, 1e5, 0, -0.03466])
+        plt.plot(t, C)
 
     plt.show()
 
-    return None
     
 if __name__ == "__main__":
     #ode_model_pressure()
@@ -956,8 +947,8 @@ if __name__ == "__main__":
     #print(n)
     #plot_benchmark_concentration()
     #plot_benchmark_pressure()
-    plot_forecasting()
-    #uncertainity()
+    #plot_forecasting()
+    uncertainity()
     #plot_pressure_model_sink()
     #plot_pressure_model_mar()
     #plot_sink_and_no_sink_and_given()
