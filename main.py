@@ -537,44 +537,268 @@ def plot_benchmark_concentration():
     plt.show()
 
 #forecasting
-def extrapolate_stock_growth():
+def extrapolate_stock_growth(t):
 
     year, stock = stock_population()
-    append_years = np.arange(start= 2020.5,stop = 2029.5)
+    
     years_copy = year.copy()
     years_copy = np.append(years_copy,2030.5)
 
-    #1.5 times population
     stock1 = stock.copy()
     stock1 = np.append(stock,954362)
-    n1 = np.interp(append_years, years_copy, stock1)
-    Rstock1 = np.append(stock,n1)
-    Rstock1 = np.append(Rstock1,954362)
 
-    y = np.append(year,append_years)
-    y = np.append(y,2030.5)
+    n1 = np.interp(t, years_copy, stock1)
+    
+    return n1
 
-    return Rstock1, y
-
-def extrapolate_stock_maintain():
+def extrapolate_stock_maintain(t):
 
     year, stock = stock_population()
-    append_years = np.arange(start= 2020.5,stop = 2029.5)
+    
     years_copy = year.copy()
     years_copy = np.append(years_copy,2030.5)
 
-    #Maintain population
-    stock2 = stock.copy()
-    stock2 = np.append(stock,640000)
-    n2 = np.interp(append_years, years_copy, stock2)
-    Rstock2 = np.append(stock,n2)
-    Rstock2 = np.append(Rstock2,640000)
+    stock1 = stock.copy()
+    stock1 = np.append(stock,640000)
 
-    y = np.append(year,append_years)
-    y = np.append(y,2030.5)
+    n1 = np.interp(t, years_copy, stock1)
     
-    return Rstock2, y
+    return n1
 
+def ode_model_concentration_with_sink_stock_growth(t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, Pmar,b):
+    ''' Returns dCdt using the pressure ode provided for the carbon sink scenario
+
+        Parameters:
+        -----------
+        t: time in years
+        C: Concentration (unknown)
+        n: number of stock 
+        P: Pressure in Pa 
+        tdelay: time delay in years
+        M: Mass Parameter (kg)
+        P0: surface pressure parameter in Pa
+        a: carbon sink infiltration coefficient parameter 
+        b1: infiltration coefficient without carbon sink parameter 
+        bc: fresh inflow coefficient
+        Pa: Pressure drop at high pressure boundary in Pa
+        Pmar: Pressure drop the MAR program produces
+        b = recharge coefficient         
+
+        Returns:
+        --------
+        dCdt: Concentration derivative solved for a point in time (t)
+    '''     
+    n = extrapolate_stock_growth(t-tdelay)
+    if (t<2012): # 2012 takes into account the 2 year delay after 2010 when the sink is installed
+        dCdt = (n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+        return dCdt / M        
+    else:
+        dCdt = (n * a * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+        return dCdt / M  
+
+def ode_model_concentration_with_sink_stock_maintain(t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, Pmar,b):
+    ''' Returns dCdt using the pressure ode provided for the carbon sink scenario
+
+        Parameters:
+        -----------
+        t: time in years
+        C: Concentration (unknown)
+        n: number of stock 
+        P: Pressure in Pa 
+        tdelay: time delay in years
+        M: Mass Parameter (kg)
+        P0: surface pressure parameter in Pa
+        a: carbon sink infiltration coefficient parameter 
+        b1: infiltration coefficient without carbon sink parameter 
+        bc: fresh inflow coefficient
+        Pa: Pressure drop at high pressure boundary in Pa
+        Pmar: Pressure drop the MAR program produces
+        b = recharge coefficient         
+
+        Returns:
+        --------
+        dCdt: Concentration derivative solved for a point in time (t)
+    '''     
+    n = extrapolate_stock_maintain(t-tdelay)
+    if (t<2012): # 2012 takes into account the 2 year delay after 2010 when the sink is installed
+        dCdt = (n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+        return dCdt / M        
+    else:
+        dCdt = (n * a * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+        return dCdt / M
+
+def ode_model_concentration_with_mar_stock_growth(t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, Pmar, b):
+    ''' Returns dCdt using the pressure ode provided for the MAR scenario
+
+        Parameters:
+        -----------
+        t: time in years
+        C: Concentration
+        n: number of stock 
+        P: Pressure in Pa 
+        tdelay: time delay in years
+        M: Mass Parameter (kg)
+        P0: surface pressure parameter in Pa
+        a: carbon sink infiltration coefficient parameter 
+        b1: infiltration coefficient without carbon sink parameter 
+        bc: fresh inflow coefficient
+        Pa: Pressure drop at high pressure boundary in Pa
+        Pmar: Pressure drop the MAR program produces in Pa
+        b = recharge coefficient         
+
+        Returns:
+        --------
+        dCdt: Concentration derivative solved for a point in time (t)
+    '''  
+    n = extrapolate_stock_growth(t-tdelay) 
+    dCdt = (n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+    
+    return dCdt / M
+
+def ode_model_concentration_with_mar_stock_maintain(t, C, n, P, tdelay, M, P0, a, b1, bc, Pa, Pmar, b):
+    ''' Returns dCdt using the pressure ode provided for the MAR scenario
+
+        Parameters:
+        -----------
+        t: time in years
+        C: Concentration
+        n: number of stock 
+        P: Pressure in Pa 
+        tdelay: time delay in years
+        M: Mass Parameter (kg)
+        P0: surface pressure parameter in Pa
+        a: carbon sink infiltration coefficient parameter 
+        b1: infiltration coefficient without carbon sink parameter 
+        bc: fresh inflow coefficient
+        Pa: Pressure drop at high pressure boundary in Pa
+        Pmar: Pressure drop the MAR program produces in Pa
+        b = recharge coefficient         
+
+        Returns:
+        --------
+        dCdt: Concentration derivative solved for a point in time (t)
+    '''  
+    n = extrapolate_stock_maintain(t-tdelay) 
+    dCdt = (n * b1 * (P-P0)) + (bc * (P - 0.5*Pa) * C)
+    
+    return dCdt / M
+
+def improved_euler_concentration_growth(f, t0, t1, dt, C0, tdelay, tmar, pars):
+    ''' Returns array of Concentration and Time solved using Improved Eulers Method
+
+        Parameters:
+        -----------
+        f: function to solve (concentration ode model)
+        t0: Starting year
+        t1: Ending year
+        dt: Step size (in years)
+        C0: Initial concentration
+        tdelay: time delay in years
+        tmar: when MAR program is implemented (year)
+        pars: M, P0, a, b1, bc, Pa, Pmar, b
+
+        Returns:
+        --------
+        t: Time array in years of step size dt
+        c: Concentration array solved for all points in time (t)
+    ''' 
+	# initialise
+    steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
+    t = t0 + np.arange(steps+1) * dt			# t array
+    c = 0. * t						        	# c array to store concentration
+    c[0] = C0							        # Set initial value of Concentration
+
+    if (f == ode_model_concentration_with_sink_stock_growth): # if scenario is with sink installed, call up pressure ode for sink scenario and solve
+        t, pressure_array = improved_euler_pressure(ode_model_pressure_with_sink, t0 = 2019, t1 = 2030, dt = 0.1, p0 = 50000, tmar = tmar, Pmar = pars[6], pars = [-0.03466,100000])
+    else:
+        t, pressure_array = improved_euler_pressure(ode_model_pressure_with_mar, t0 = 2019, t1 = 2030, dt = 0.1, p0 = 50000, tmar = tmar, Pmar = pars[6], pars = [-0.03466,100000])
+
+    # Iterate over all values of t
+    for i in range (steps):
+        P = pressure_array[i]
+        n = extrapolate_stock_growth(t[i]-tdelay)
+        f0 = f(t[i], c[i], n, P, tdelay, *pars)
+        f1 = f(t[i] + dt, c[i] + dt * f0, n, P, tdelay, *pars)
+	    # Increment solution by step size x half of each derivative
+        c[i+1] = c[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
+
+    return t, c
+
+def improved_euler_concentration_maintain(f, t0, t1, dt, C0, tdelay, tmar, pars):
+    ''' Returns array of Concentration and Time solved using Improved Eulers Method
+
+        Parameters:
+        -----------
+        f: function to solve (concentration ode model)
+        t0: Starting year
+        t1: Ending year
+        dt: Step size (in years)
+        C0: Initial concentration
+        tdelay: time delay in years
+        tmar: when MAR program is implemented (year)
+        pars: M, P0, a, b1, bc, Pa, Pmar, b
+
+        Returns:
+        --------
+        t: Time array in years of step size dt
+        c: Concentration array solved for all points in time (t)
+    ''' 
+	# initialise
+    steps = int(np.ceil((t1-t0) / dt))	       	# Number of Euler steps to take
+    t = t0 + np.arange(steps+1) * dt			# t array
+    c = 0. * t						        	# c array to store concentration
+    c[0] = C0							        # Set initial value of Concentration
+
+    if (f == ode_model_concentration_with_sink_stock_maintain): # if scenario is with sink installed, call up pressure ode for sink scenario and solve
+        t, pressure_array = improved_euler_pressure(ode_model_pressure_with_sink, t0 = 2019, t1 = 2030, dt = 0.1, p0 = 50000, tmar = tmar, Pmar = pars[6], pars = [-0.03466,100000])
+    else:
+        t, pressure_array = improved_euler_pressure(ode_model_pressure_with_mar, t0 = 2019, t1 = 2030, dt = 0.1, p0 = 50000, tmar = tmar, Pmar = pars[6], pars = [-0.03466,100000])
+
+    # Iterate over all values of t
+    for i in range (steps):
+        P = pressure_array[i]
+        n = extrapolate_stock_maintain(t[i]-tdelay)
+        f0 = f(t[i], c[i], n, P, tdelay, *pars)
+        f1 = f(t[i] + dt, c[i] + dt * f0, n, P, tdelay, *pars)
+	    # Increment solution by step size x half of each derivative
+        c[i+1] = c[i] + (dt * (0.5 * f0 + 0.5 * f1)) 
+
+    return t, c
+
+def plot_forecasting():
+    #give data and concentration models
+    t_conc,conc = nitrate_concentration()
+    t_conc_model_sink, conc_sink = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    t_conc_model_mar, conc_mar = improved_euler_concentration(ode_model_concentration_with_mar, t0 = 1980, t1 = 2019, dt = 0.1, C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+
+    figure,ax = plt.subplots(1,1)
+    ax.plot(t_conc, conc, 'r',marker = '.',linestyle = 'None', label = 'Concentration data')
+    ax.plot(t_conc_model_sink, conc_sink, 'g', label = 'Conc model sink')
+    ax.plot(t_conc_model_mar, conc_mar, 'b', label = 'Conc model mar')
+    
+    #what-if scenarios
+    
+    #Rejection of consent, so carbon sink and maintain stock number
+    ts1,cs1 = improved_euler_concentration_maintain(ode_model_concentration_with_sink_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    ax.plot(ts1, cs1, 'm', label = 'Scenario One, Rejection of consent, so carbon sink and maintaining stock number')
+
+    #Rejection of consent, so carbon sink and and increase stock number
+    ts2,cs2 = improved_euler_concentration_growth(ode_model_concentration_with_sink_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_sink[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    ax.plot(ts2, cs2, 'k', label = 'Scenario Two, Rejection of consent, so carbon sink and and increase stock number')
+
+    #Acceptance of consent, so implement mar and maintain stock number
+    ts3,cs3 = improved_euler_concentration_maintain(ode_model_concentration_with_mar_stock_maintain, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    ax.plot(ts3, cs3, 'y', label = 'Scenario Three, Acceptance of consent, so implement mar and maintain stock number')
+
+    #Acceptance of consent, so implement mar and increase stock number
+    ts4,cs4 = improved_euler_concentration_growth(ode_model_concentration_with_mar_stock_growth, t0 = 2019, t1 = 2030, dt = 0.1, C0 = conc_mar[-1], tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
+    ax.plot(ts4, cs4, 'c', label = 'Scenario Four, Acceptance of consent, so implement mar and increase stock number')
+
+    ax.legend()
+    ax.set(title = 'Concentration forecasting', xlabel = 'Time (years)', ylabel = 'Concentration')
+    plt.show()
+
+    
 if __name__ == "__main__":
     #ode_model_pressure()
     #ode_model_concentration()
@@ -582,10 +806,11 @@ if __name__ == "__main__":
     # plot_given_data()
     # plot_concentration_model_sink()
     # plot_concentration_model_mar()
-    # plot_sink_and_given()
-    # plot_mar_and_given()
+    #plot_sink_and_given()
+    #plot_mar_and_given()
     #plot_concentration_model_with_curve_fit()
     #n = stock_interpolation(2000.96)
     #print(n)
-    plot_benchmark_concentration()
-    plot_benchmark_pressure()
+    #plot_benchmark_concentration()
+    #plot_benchmark_pressure()
+    plot_forecasting()
