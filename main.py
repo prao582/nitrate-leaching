@@ -535,29 +535,26 @@ def plot_benchmark_pressure():
     for i in range (len(inverse_stepsize)):
         tA, PA = improved_euler_pressure(ode_model_pressure_with_sink, t0 = 1980, t1 = 2019, dt = inverse_stepsize[i]**(-1), p0 = 50000, tmar = 2020, Pmar = 50000, pars = [-0.03466,100000])
         P_Convergence[i] = PA[-1]
-        
-    plt.subplot(1,3,1)
-    plt.plot(t,P_Numerical,'b--',label = 'Numerical')
-    plt.plot(t,P_Analytical,'rx',label = 'Analytical')
+           
+    # plt.subplot(1,3,2)
+    # plt.plot(t,P_Error,'k-')
+    # plt.title('Error Analysis')
+    # plt.xlabel('t')
+    # plt.ylabel('Relative Error Against Benchmark')
+
+    plt.plot(t,P_Numerical,'bD',label = 'Numerical')
+    plt.plot(t,P_Analytical,'r+',label = 'Analytical')
+    plt.title('Pressure Numerical vs Analytical Benchmark')
+    plt.xlabel('Time (Years)')
+    plt.ylabel('Pressure (Pa)')
     plt.legend()
-    plt.title('Benchmark')
-    plt.xlabel('t')
-    plt.ylabel('P')
-
+    plt.show()
     
-    plt.subplot(1,3,2)
-    plt.plot(t,P_Error,'k-')
-    plt.title('Error Analysis')
-    plt.xlabel('t')
-    plt.ylabel('Relative Error Against Benchmark')
-
-    plt.subplot(1,3,3)
     plt.plot(inverse_stepsize,P_Convergence,'bx')
-    plt.title('Timestep Convergence')
+    plt.title('Pressure Timestep Convergence')
     plt.xlabel('1/delta t')
-    plt.ylabel('')
-
-    plt.tight_layout()
+    plt.ylabel('Solution(t=2019)')
+    plt.legend()
     plt.show()
 
 def plot_benchmark_concentration():
@@ -611,32 +608,20 @@ def plot_benchmark_concentration():
         tA, CA = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = inverse_stepsize[i]**(-1), C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1e9, 5e4, 6.50424868e-01 , 7.35181289e-01, -3.39986410e+04, 1e5, 0, -0.03466])
         #tA, CA = improved_euler_concentration(ode_model_concentration_with_sink, t0 = 1980, t1 = 2019, dt = inverse_stepsize[i]**(-1), C0 = 0.2, tdelay = 2, tmar = 2020, pars = [1, 0, 0.5 , 1, -1, 0, 0, -0.03466])
         C_Convergence[i] = CA[-1]
-        
-        
-
-
-
-    plt.subplot(1,3,1)
+  
     plt.plot(t,C_Numerical,'b--',label = 'Numerical')
     plt.plot(t,C_Analytical,'rx',label = 'Analytical')
+    plt.title('Concentration Numerical vs Analytical Benchmark')
+    plt.xlabel('Time (Years)')
+    plt.ylabel('Concentraion (mg/L)')
     plt.legend()
-    plt.title('Benchmark')
-    plt.xlabel('t')
-    plt.ylabel('C')
-    #plt.show()
-    plt.subplot(1,3,2)
-    plt.plot(t,C_Error,'k-')
-    plt.title('Error Analysis')
-    plt.xlabel('t')
-    plt.ylabel('Relative Error Against Benchmark')
-
-    plt.subplot(1,3,3)
+    plt.show()
+    
     plt.plot(inverse_stepsize,C_Convergence,'bx')
-    plt.title('Timestep Convergence')
+    plt.title('Concentration Timestep Convergence')
     plt.xlabel('1/delta t')
-    plt.ylabel('')
-
-    plt.tight_layout()
+    plt.ylabel('Solution(t=2019)')
+    plt.legend()
     plt.show()
 
 ###################################################

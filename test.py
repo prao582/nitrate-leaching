@@ -190,12 +190,6 @@ def test_improved_euler_pressure():
     assert(np.linalg.norm (p - p_sln) < testVal)
 
 
-#     # Test backward steps   
-# 	t2, p2 = solve_ode(f = , t0 = 2, t1 = 0, dt = -2, p0 = , pars = [?, ?])
-# 	t2_soln = 
-# 	p2_soln = 
-# 	assert(np.linalg.norm(t2 - t2_soln) < testVal)
-# 	assert(np.linalg.norm(p2 - p2_soln) < testVal)
     
 # Testing to see if ode concentration model is working 
 def test_improved_euler_concentration():
@@ -205,15 +199,9 @@ def test_improved_euler_concentration():
     # the pressure values were hard coded into our solver along with our time and n 
     # first three pressure values to put in from the pressure array = [50000, 50347.8013156, 50698.02194630] and n = 37772
     c1_soln = [1,957.109822, 1944.324905]
-
     assert(np.linalg.norm(c1 - c1_soln) < testVal)   
 
-#     # Test backward steps
-#     t2,c2 = improved_euler_concentration(f = , t0 = 2, t1 = 0, dt = -2, C0 = , tdelay = , pars = [?, ?] )
-#     t2_soln = 
-#     c2_soln = 
-#     assert(np.linalg.norm(t2 - t2_soln) < testVal)
-#     assert(np.linalg.norm(c2 - c2_soln) < testVal)  
+
 
 def main():
     test_dPdt()
