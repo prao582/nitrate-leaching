@@ -1056,7 +1056,7 @@ def plot_concentration_misfit_unimproved():
     plt.show()
  
 if __name__ == "__main__":
-
+    plot_given_data()
     plot_benchmark_pressure()
     plot_benchmark_concentration()
     plot_sink_and_given()
